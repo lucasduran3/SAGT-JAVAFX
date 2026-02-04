@@ -7,19 +7,22 @@ package com.mvcjava.sagt.javafx.dao.impl;
 import com.mvcjava.sagt.javafx.config.DatabaseManager;
 import com.mvcjava.sagt.javafx.dao.interfaces.ProductDAO;
 import com.mvcjava.sagt.javafx.dao.model.Product;
+import com.mvcjava.sagt.javafx.exception.DataAccessException;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
  *
  * @author lucas
  */
-public class ProductDAOImpl implements ProductDAO{
+public class ProductDAOImpl implements ProductDAO {
     
     @Override
         public void addProduct(Product product) {
@@ -50,7 +53,7 @@ public class ProductDAOImpl implements ProductDAO{
             stmt.executeUpdate();
         }
         catch (SQLException ex) {
-            ex.printStackTrace();
+            throw new DataAccessException("Error al guardar el producto: " + product.getName(), ex);
         }
     }
 
@@ -77,12 +80,12 @@ public class ProductDAOImpl implements ProductDAO{
                     product.setIdSupplier((UUID)rs.getObject("id_proveedor"));
                     product.setLoadedBy((UUID)rs.getObject("cargado_por"));
                     product.setEntryDate(rs.getTimestamp("fecha_ingreso"));
-                    product.setEntryDate(rs.getTimestamp("fecha_actualizacion"));
+                    product.setUpdateDate(rs.getTimestamp("fecha_actualizacion"));
                 }
             }
 
         } catch (SQLException ex) {
-            ex.printStackTrace();
+            throw new DataAccessException("Error al obtener el producto con id: " + id.toString(), ex);
         }
         return product; 
     }
@@ -93,8 +96,12 @@ public class ProductDAOImpl implements ProductDAO{
             return;
         }
         
-        StringBuilder sql = new StringBuilder("UPDATE app.productos SET");
+        //Limpiar valores nulos del mapa (no se admiten nulos)
+        updates.values().removeIf(t -> t == null);
         
+        if (updates.isEmpty()) return;
+        
+        StringBuilder sql = new StringBuilder("UPDATE app.productos SET");
         int idx = 0;
         for (Map.Entry<String, Object> e : updates.entrySet()) {
             if (idx++ > 0) sql.append(", ");
@@ -107,23 +114,14 @@ public class ProductDAOImpl implements ProductDAO{
         {
             int i = 1;
             for (Object p : updates.values()) {
-                if (p == null) {
-                } else if (p instanceof String) {
-                    stmt.setString(i++, (String) p);
-                } else if (p instanceof Integer) {
-                    stmt.setInt(i++, (Integer) p);
-                } else if (p instanceof Float) {
-                    stmt.setFloat(i++, (Float) p);
-                } else if (p instanceof UUID) {
-                    stmt.setObject(i++, (UUID) p);
-                } else if (p instanceof Timestamp) {
-                    stmt.setTimestamp(i++, (Timestamp) p);
-                }
+                stmt.setObject(i++, p);
             }
             stmt.setObject(i, id);
+            
             stmt.executeUpdate();
+            
         } catch (SQLException ex) {
-            ex.printStackTrace();
+            throw new DataAccessException("Error al actualizar el producto con id: " + id.toString(), ex);
         }
     }
 
@@ -136,7 +134,7 @@ public class ProductDAOImpl implements ProductDAO{
             stmt.setObject(1, id);
             stmt.executeUpdate();
         } catch (SQLException ex) {
-            ex.printStackTrace();
+            throw new DataAccessException("Error al eliminar el producto con id: " + id.toString(), ex);
         }
     }
 
@@ -155,7 +153,7 @@ public class ProductDAOImpl implements ProductDAO{
                 return rs.next();
             }
         } catch (SQLException ex) {
-            throw new RuntimeException();
+            throw new DataAccessException("Error al verificar existencia del producto: " + name + " " + model + " " + brand, ex);
         }
     }
 }

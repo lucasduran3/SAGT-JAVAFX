@@ -4,11 +4,14 @@
  */
 package com.mvcjava.sagt.javafx.service.impl;
 
-import com.mvcjava.sagt.javafx.dao.interfaces.ProductDAO;
-import com.mvcjava.sagt.javafx.dao.model.Product;
-import com.mvcjava.sagt.javafx.service.interfaces.ProductService;
 import java.util.Map;
 import java.util.UUID;
+
+import com.mvcjava.sagt.javafx.dao.interfaces.ProductDAO;
+import com.mvcjava.sagt.javafx.dao.model.Product;
+import com.mvcjava.sagt.javafx.exception.BusinessException;
+import com.mvcjava.sagt.javafx.service.interfaces.ProductService;
+
 /**
  *
  * @author lucas
@@ -21,14 +24,14 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public void createProduct(Product product) throws Exception{
+    public void createProduct(Product product) throws BusinessException {
         boolean exist = productDAO.alreadyExist(product.getName(), product.getModel(), product.getBrand());
         if (exist) {
-            throw new Exception("Este producto ya existe en la base de datos");
+            throw new BusinessException("Este producto ya existe: " + product.getName() + " " + product.getBrand() + " " + product.getModel());
         }
             
         if (product.getPurchasePrice() > product.getSalePrice()) {
-            throw new Exception("El precio de venta debe ser mayor al precio de compra");
+            throw new BusinessException("El precio de venta debe ser mayor al precio de compra.");
         }
        
         productDAO.addProduct(product);
@@ -40,10 +43,10 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public void updateProduct(UUID id, Map<String, Object> updates) throws Exception{
+    public void updateProduct(UUID id, Map<String, Object> updates) throws BusinessException {
         Product currentProduct = productDAO.getProduct(id);
         if (currentProduct == null) {
-            throw new Exception("El producto que intenta actualizar no existe.");
+            throw new BusinessException("El producto que quiere actualizar no existe.");
         }
         
         String newName = updates.containsKey("nombre") ? (String) updates.get("nombre")
@@ -60,7 +63,7 @@ public class ProductServiceImpl implements ProductService {
         if (dataChanged) {
             boolean exists = productDAO.alreadyExist(newName, newModel, newBrand);          
             if (exists) {
-                throw new Exception("Ya existe otro producto con el mismo nombre, marca y modelo.");
+                throw new BusinessException("Ya existe otro producto con el mismo nombre, marca y modelo.");
             }
         }
         
@@ -69,7 +72,7 @@ public class ProductServiceImpl implements ProductService {
             float newSalePrice = updates.containsKey("precio_venta") ? ((Float) updates.get("precio_venta")) : currentProduct.getSalePrice();
             
             if (newPurchasePrice > newSalePrice) {
-                throw new Exception("El precio de compra no puede ser mayor al precio de venta.");
+                throw new BusinessException("El precio de compra no puede ser mayor al precio de venta.");
             }
         }
         
@@ -77,10 +80,10 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public void deleteProduct(UUID id) throws Exception{
+    public void deleteProduct(UUID id) throws BusinessException {
         Product currentProduct = productDAO.getProduct(id);
         if (currentProduct == null) {
-            throw new Exception("El producto que quieres eliminar no existe.");
+            throw new BusinessException("El producto que quiere eliminar no existe.");
         }
         productDAO.deleteProduct(id);
     }
