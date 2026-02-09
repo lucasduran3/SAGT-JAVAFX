@@ -7,15 +7,16 @@ package com.mvcjava.sagt.javafx.dao.impl;
 import com.mvcjava.sagt.javafx.config.DatabaseManager;
 import com.mvcjava.sagt.javafx.dao.interfaces.ProductDAO;
 import com.mvcjava.sagt.javafx.dao.model.Product;
+import com.mvcjava.sagt.javafx.dto.ProductWithRelations;
 import com.mvcjava.sagt.javafx.exception.DataAccessException;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -51,8 +52,7 @@ public class ProductDAOImpl implements ProductDAO {
             stmt.setObject(8, product.getIdSupplier());
             stmt.setObject(9, product.getLoadedBy());
             stmt.executeUpdate();
-        }
-        catch (SQLException ex) {
+        } catch (SQLException ex) {
             throw new DataAccessException("Error al guardar el producto: " + product.getName(), ex);
         }
     }
@@ -68,19 +68,7 @@ public class ProductDAOImpl implements ProductDAO {
             stmt.setObject(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    product = new Product();
-                    product.setId((UUID)rs.getObject("id"));
-                    product.setName(rs.getString("nombre"));
-                    product.setBrand(rs.getString("marca"));
-                    product.setModel(rs.getString("modelo"));
-                    product.setPurchasePrice(rs.getFloat("precio_compra"));
-                    product.setSalePrice(rs.getFloat("precio_venta"));
-                    product.setStock(rs.getInt("stock"));
-                    product.setMinStock(rs.getInt("stock_minimo"));
-                    product.setIdSupplier((UUID)rs.getObject("id_proveedor"));
-                    product.setLoadedBy((UUID)rs.getObject("cargado_por"));
-                    product.setEntryDate(rs.getTimestamp("fecha_ingreso"));
-                    product.setUpdateDate(rs.getTimestamp("fecha_actualizacion"));
+                    product = mapResultSetToProduct(rs);
                 }
             }
 
@@ -88,6 +76,58 @@ public class ProductDAOImpl implements ProductDAO {
             throw new DataAccessException("Error al obtener el producto con id: " + id.toString(), ex);
         }
         return product; 
+    }
+
+    @Override
+    public List<Product> findAll() {
+        List<Product> products = new ArrayList<Product>();       
+        String sql = "SELECT * FROM app.productos";
+        
+        try (Connection conn = DatabaseManager.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql);
+                ResultSet rs = stmt.executeQuery()) {
+            
+            while (rs.next()) {
+                products.add(mapResultSetToProduct(rs));
+            }
+            
+        } catch (SQLException ex) {
+            throw new DataAccessException("Error obtener productos.", ex);
+        }
+        
+        return products;
+    }
+
+    @Override
+    public List<ProductWithRelations> findAllWithRelations() {
+        List<ProductWithRelations> results = new ArrayList();
+        String sql = "SELECT "
+                + "p.id, p.nombre, p.marca, p.modelo, p.precio_compra, "
+                + "p.precio_venta, p.stock, p.stock_minimo, p.id_proveedor, "
+                + "p.cargado_por, p.fecha_ingreso, p.fecha_actualizacion, "
+                + "u.nombre || ' ' || u.apellido AS u_nombre "
+                + "FROM app.productos p "
+                + "LEFT JOIN app.perfiles u "
+                + "ON p.cargado_por = u.id";
+
+        
+        try (Connection conn = DatabaseManager.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql);
+                ResultSet rs = stmt.executeQuery()) {
+            
+            while (rs.next()) {
+                Product product = mapResultSetToProduct(rs);
+                
+                String loadedByName = rs.getString("u_nombre");
+                
+                ProductWithRelations dto = new ProductWithRelations(product, loadedByName != null ? loadedByName : "Desconocido");
+                results.add(dto);
+            }
+        } catch (SQLException ex) {
+            throw new DataAccessException("Error al obtener productos con relaciones", ex);
+        }
+        
+        return results;
     }
 
     @Override
@@ -155,5 +195,24 @@ public class ProductDAOImpl implements ProductDAO {
         } catch (SQLException ex) {
             throw new DataAccessException("Error al verificar existencia del producto: " + name + " " + model + " " + brand, ex);
         }
+    }
+    
+    private Product mapResultSetToProduct(ResultSet rs) throws SQLException {
+        Product product = new Product();
+        
+        product.setId((UUID)rs.getObject("id"));
+        product.setName(rs.getString("nombre"));
+        product.setBrand(rs.getString("marca"));
+        product.setModel(rs.getString("modelo"));
+        product.setPurchasePrice(rs.getFloat("precio_compra"));
+        product.setSalePrice(rs.getFloat("precio_venta"));
+        product.setStock(rs.getInt("stock"));
+        product.setMinStock(rs.getInt("stock_minimo"));
+        product.setIdSupplier((UUID)rs.getObject("id_proveedor"));
+        product.setLoadedBy((UUID)rs.getObject("cargado_por"));
+        product.setEntryDate(rs.getTimestamp("fecha_ingreso"));
+        product.setUpdateDate(rs.getTimestamp("fecha_actualizacion"));
+        
+        return product;
     }
 }

@@ -8,7 +8,6 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.UUID;
 
 /**
  * JavaFX App
@@ -18,10 +17,18 @@ public class App extends Application {
     private static Scene scene;
 
     @Override
-    public void start(Stage stage) throws SQLException {
+    public void start(Stage stage) throws IOException {
         /*scene = new Scene(loadFXML("primary"), 640, 480);
         stage.setScene(scene);
         stage.show();*/
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/mvcjava/sagt/javafx/view/productsView.fxml"));
+        
+        
+        Scene scene = new Scene(loader.load());
+        
+        stage.setTitle("mi app");
+        stage.setScene(scene);
+        stage.show();
     }
 
     public static void setRoot(String fxml) throws IOException {
@@ -34,6 +41,6 @@ public class App extends Application {
     }
 
     public static void main(String[] args) throws SQLException {
-        
+        launch(args);
     }
 }

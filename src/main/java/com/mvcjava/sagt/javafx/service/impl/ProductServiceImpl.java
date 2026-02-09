@@ -4,13 +4,16 @@
  */
 package com.mvcjava.sagt.javafx.service.impl;
 
+import com.mvcjava.sagt.javafx.dao.impl.ProductDAOImpl;
 import java.util.Map;
 import java.util.UUID;
 
 import com.mvcjava.sagt.javafx.dao.interfaces.ProductDAO;
 import com.mvcjava.sagt.javafx.dao.model.Product;
+import com.mvcjava.sagt.javafx.dto.ProductWithRelations;
 import com.mvcjava.sagt.javafx.exception.BusinessException;
 import com.mvcjava.sagt.javafx.service.interfaces.ProductService;
+import java.util.List;
 
 /**
  *
@@ -19,8 +22,8 @@ import com.mvcjava.sagt.javafx.service.interfaces.ProductService;
 public class ProductServiceImpl implements ProductService {
     private final ProductDAO productDAO;
     
-    public ProductServiceImpl(ProductDAO productDAO) {
-        this.productDAO = productDAO;
+    public ProductServiceImpl() {
+        this.productDAO = new ProductDAOImpl();
     }
 
     @Override
@@ -40,6 +43,16 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public Product getProduct(UUID id) {
         return productDAO.getProduct(id);
+    }
+
+    @Override
+    public List<Product> getAll() {
+        return productDAO.findAll();
+    }
+    
+    @Override
+    public List<ProductWithRelations> getAllWithRelations() {
+        return productDAO.findAllWithRelations();
     }
 
     @Override
@@ -72,7 +85,7 @@ public class ProductServiceImpl implements ProductService {
             float newSalePrice = updates.containsKey("precio_venta") ? ((Float) updates.get("precio_venta")) : currentProduct.getSalePrice();
             
             if (newPurchasePrice > newSalePrice) {
-                throw new BusinessException("El precio de compra no puede ser mayor al precio de venta.");
+                throw new BusinessException("El precio de venta debe ser mayor al precio de compra.");
             }
         }
         

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.geometry.Insets?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.mvcjava.sagt.javafx.controller.ProductController">
+    
+    <center>
+        <!-- La tabla donde se mostrarán los productos -->
+        <TableView fx:id="productsTable">
+            <!-- Las columnas se configuran en Java, no aquí -->
+        </TableView>
+    </center>
+    
+    <bottom>
+        <HBox spacing="10" alignment="CENTER">
+            <padding>
+                <Insets top="10" bottom="10" left="10" right="10"/>
+            </padding>
+            
+            <!-- Botones para futuras funcionalidades -->
+            <Button text="Nuevo Producto" />
+            <Button text="Eliminar Seleccionado"/>
+            <Button text="Refrescar" />
+        </HBox>
+    </bottom>
+    
+</BorderPane>
