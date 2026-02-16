@@ -103,9 +103,8 @@ public class Supplier {
         return this.province;
     }
 
-    //Para usar con ComboBox
     @Override
-    public String toString() { //ComboBox usa toString para mostrar cada item
+    public String toString() { //ComboBox usa toString para mostrar cada item al hacer items.setALl()
         return name;
     }
 }

@@ -103,7 +103,7 @@ public class Product {
     }
     
     public void setBrand(String brand) {
-        stringValidator.validate(brand, 3, 100, "marca");
+        stringValidator.validate(brand, 1, 100, "marca");
         this.brand = brand;
     }
     

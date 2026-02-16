@@ -4,11 +4,14 @@
  */
 package com.mvcjava.sagt.javafx.viewmodel;
 
+import com.mvcjava.sagt.javafx.dao.model.Category;
 import com.mvcjava.sagt.javafx.dao.model.Product;
 import com.mvcjava.sagt.javafx.dao.model.Supplier;
 import com.mvcjava.sagt.javafx.dto.ProductWithRelations;
 import java.sql.Timestamp;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.List;
 import javafx.beans.property.FloatProperty;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ObjectProperty;
@@ -17,6 +20,9 @@ import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.StringProperty;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
 
 /**
  *
@@ -34,6 +40,9 @@ public class ProductViewModel {
     private final StringProperty loadedByName;
     private final ObjectProperty<Supplier> supplier;
     
+    private final ObservableList<Category> categories;
+    private final StringProperty categoriesDisplay;
+    
     //Constructor recibe producto + nombres
     public ProductViewModel(ProductWithRelations dto, Supplier supplier) {
         this.product = dto.getProduct();
@@ -48,26 +57,35 @@ public class ProductViewModel {
         this.loadedByName = new SimpleStringProperty(dto.getLoadedByName());
         this.supplier = new SimpleObjectProperty<>(supplier);
         
+        this.categories = FXCollections.observableArrayList(dto.getCategories());
+        this.categoriesDisplay = new SimpleStringProperty();
+        updateCategoriesDisplay();
+        
         setupSync();
     }
     
+    //Sincronizar properties con el modelo
     private void setupSync() {
-        name.addListener((o, cl, newVal) -> product.setName(newVal));
-        brand.addListener((o, cl, newVal) -> product.setBrand(newVal));
-        model.addListener((o, cl, newVal) -> product.setModel(newVal));
-        purchasePrice.addListener((o, cl, newVal) -> product.setPurchasePrice(newVal.floatValue()));
-        salePrice.addListener((o, cl, newVal) -> product.setSalePrice(newVal.floatValue()));
-        stock.addListener((o, cl, newVal) -> product.setStock(newVal.intValue()));
-        minStock.addListener((o, cl, newVal) -> product.setMinStock(newVal.intValue()));
-        
+        name.addListener((obs, old, newVal) -> product.setName(newVal));
+        brand.addListener((obs, old, newVal) -> product.setBrand(newVal));
+        model.addListener((obs, old, newVal) -> product.setModel(newVal));
+        purchasePrice.addListener((obs, old, newVal) -> product.setPurchasePrice(newVal.floatValue()));
+        salePrice.addListener((obs, old, newVal) -> product.setSalePrice(newVal.floatValue()));
+        stock.addListener((obs, old, newVal) -> product.setStock(newVal.intValue()));
+        minStock.addListener((obs, old, newVal) -> product.setMinStock(newVal.intValue()));
         supplier.addListener((o, cl, newVal) -> {
             if (newVal != null) {
                 product.setIdSupplier(newVal.getId());
             }
         });
+        
+        //Actualiza el display cuando cambian las categorias
+        this.categories.addListener((ListChangeListener<Category>) change -> {
+            updateCategoriesDisplay();
+        });
     }
     
-    //GETTERS
+    //Getters de properties
     public StringProperty nameProperty() {
         return name;
     }
@@ -95,9 +113,14 @@ public class ProductViewModel {
     public ObjectProperty<Supplier> supplierProperty() {
         return supplier;
     }
+    public StringProperty categoriesDisplayProperty() {
+        return categoriesDisplay;
+    }
+    public ObservableList<Category> getCategories() {
+        return categories;
+    }
     
-    
-    //GETTERS CAMPOS NO EDITABLES
+    //Getters de campos no editables
     public UUID getId() {
         return product.getId();
     }
@@ -116,8 +139,24 @@ public class ProductViewModel {
     public Timestamp getUpdateDate() {
         return product.getUpdateDate();
     }
-        
+       
+    //Getter modelo
     public Product getModel() {
         return this.product;
+    }
+    
+    public void setCategories(List<Category> categories) {
+        this.categories.setAll(categories);
+    }
+    
+    private void updateCategoriesDisplay() {
+        if (categories.isEmpty()) {
+            categoriesDisplay.set("Sin categorias");
+        } else {
+            String display = categories.stream()
+                    .map(Category::getName)
+                    .collect(Collectors.joining(", "));
+            categoriesDisplay.set(display);
+        }
     }
 }

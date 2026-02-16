@@ -6,6 +6,7 @@ package com.mvcjava.sagt.javafx.dao.impl;
 
 import com.mvcjava.sagt.javafx.config.DatabaseManager;
 import com.mvcjava.sagt.javafx.dao.interfaces.ProductDAO;
+import com.mvcjava.sagt.javafx.dao.model.Category;
 import com.mvcjava.sagt.javafx.dao.model.Product;
 import com.mvcjava.sagt.javafx.dto.ProductWithRelations;
 import com.mvcjava.sagt.javafx.exception.DataAccessException;
@@ -105,11 +106,18 @@ public class ProductDAOImpl implements ProductDAO {
                 + "p.id, p.nombre, p.marca, p.modelo, p.precio_compra, "
                 + "p.precio_venta, p.stock, p.stock_minimo, p.id_proveedor, "
                 + "p.cargado_por, p.fecha_ingreso, p.fecha_actualizacion, "
-                + "u.nombre || ' ' || u.apellido AS u_nombre "
+                + "u.nombre || ' ' || u.apellido AS u_nombre, "
+                + "ARRAY_AGG(c.id ORDER BY c.nombre) AS categorias_id, "
+                + "ARRAY_AGG(c.nombre ORDER BY c.nombre) AS categorias_nombre "
                 + "FROM app.productos p "
-                + "LEFT JOIN app.perfiles u "
-                + "ON p.cargado_por = u.id";
-
+                + "LEFT JOIN app.perfiles u ON p.cargado_por = u.id "
+                + "LEFT JOIN app.productos_categorias pc ON p.id = pc.id_producto "
+                + "LEFT JOIN app.categorias c ON pc.id_categoria = c.id "
+                + "GROUP BY "
+                + "p.id, p.nombre, p.marca, p.modelo, p.precio_compra, p.precio_venta, "
+                + "p.stock, p.stock_minimo, p.id_proveedor, p.cargado_por, p.fecha_ingreso, "
+                + "p.fecha_actualizacion, u.nombre, u.apellido "
+                + "ORDER BY p.nombre";
         
         try (Connection conn = DatabaseManager.getConnection();
                 PreparedStatement stmt = conn.prepareStatement(sql);
@@ -120,11 +128,15 @@ public class ProductDAOImpl implements ProductDAO {
                 
                 String loadedByName = rs.getString("u_nombre");
                 
-                ProductWithRelations dto = new ProductWithRelations(product, loadedByName != null ? loadedByName : "Desconocido");
+                List<Category> categories = extractCategoriesFromResultSet(rs);
+                
+                ProductWithRelations dto = new ProductWithRelations(product, loadedByName != null ? loadedByName : "Desconocido", categories);
+                
                 results.add(dto);
             }
         } catch (SQLException ex) {
-            throw new DataAccessException("Error al obtener productos con relaciones", ex);
+            ex.printStackTrace();
+            throw new DataAccessException("Error al obtener productos con relaciones. ", ex);
         }
         
         return results;
@@ -214,5 +226,27 @@ public class ProductDAOImpl implements ProductDAO {
         product.setUpdateDate(rs.getTimestamp("fecha_actualizacion"));
         
         return product;
+    }
+    
+    private List<Category> extractCategoriesFromResultSet(ResultSet rs) throws SQLException {
+        List<Category> categories = new ArrayList<>();
+        
+        UUID[] ids = (UUID[]) rs.getArray("categorias_id").getArray();
+        String[] names = (String[]) rs.getArray("categorias_nombre").getArray();
+        
+        if (ids == null || names == null) {
+            return categories;
+        }
+        
+        if (ids.length != names.length) {
+            throw new SQLException("Inconsistencia en arrays de categorias.");
+        }
+        
+        for (int i = 0; i < ids.length; i++) {
+            Category category = new Category(ids[i], names[i]);
+            categories.add(category);
+        }
+        
+        return categories;
     }
 }

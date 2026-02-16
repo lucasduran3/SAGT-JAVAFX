@@ -26,7 +26,7 @@
             <!-- Botones para futuras funcionalidades -->
             <Button text="Nuevo Producto" />
             <Button text="Eliminar Seleccionado"/>
-            <Button text="Refrescar" />
+            <Button text="Refrescar" onAction="#refresh"/>
         </HBox>
     </bottom>
     
