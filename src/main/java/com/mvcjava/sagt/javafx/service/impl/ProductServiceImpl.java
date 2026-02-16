@@ -14,6 +14,7 @@ import com.mvcjava.sagt.javafx.dto.ProductWithRelations;
 import com.mvcjava.sagt.javafx.exception.BusinessException;
 import com.mvcjava.sagt.javafx.service.interfaces.ProductService;
 import java.util.List;
+import java.util.Set;
 
 /**
  *
@@ -28,7 +29,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public void createProduct(Product product) throws BusinessException {
-        boolean exist = productDAO.alreadyExist(product.getName(), product.getModel(), product.getBrand());
+        boolean exist = productDAO.alreadyExist(product.getId(), product.getName(), product.getModel(), product.getBrand());
         if (exist) {
             throw new BusinessException("Este producto ya existe: " + product.getName() + " " + product.getBrand() + " " + product.getModel());
         }
@@ -73,9 +74,13 @@ public class ProductServiceImpl implements ProductService {
                 updates.containsKey("modelo") ||
                 updates.containsKey("marca");
         
+        System.out.println("datachanged?: " + dataChanged);
+        
         if (dataChanged) {
-            boolean exists = productDAO.alreadyExist(newName, newModel, newBrand);          
+            boolean exists = productDAO.alreadyExist(id, newName, newModel, newBrand); 
+            System.out.println("Checkeando si existe; " + exists);
             if (exists) {
+                System.out.println("El prod ya existe");
                 throw new BusinessException("Ya existe otro producto con el mismo nombre, marca y modelo.");
             }
         }
@@ -91,6 +96,22 @@ public class ProductServiceImpl implements ProductService {
         
         productDAO.updateProduct(id, updates);
     }
+
+    @Override
+    public void updateProductCategories(Map<UUID, Set<UUID>> updates) throws BusinessException{
+        //Validaciones
+        for (Map.Entry<UUID, Set<UUID>> entry : updates.entrySet()) {
+            UUID productId = entry.getKey();
+            
+            if (productId == null) {
+                throw new BusinessException("ID de producto inválido");
+            }
+        }
+        
+        productDAO.updateProductCategories(updates);
+    }
+    
+    
 
     @Override
     public void deleteProduct(UUID id) throws BusinessException {

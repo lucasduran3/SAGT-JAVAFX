@@ -13,8 +13,10 @@ import com.mvcjava.sagt.javafx.service.impl.ProductServiceImpl;
 import com.mvcjava.sagt.javafx.service.impl.SupplierServiceImpl;
 import com.mvcjava.sagt.javafx.viewmodel.ProductViewModel;
 import com.mvcjava.sagt.javafx.dto.ProductWithRelations;
+import com.mvcjava.sagt.javafx.exception.BusinessException;
 import com.mvcjava.sagt.javafx.service.impl.CategoryServiceImpl;
 import com.mvcjava.sagt.javafx.service.interfaces.CategoryService;
+import com.mvcjava.sagt.javafx.util.AlertUtils;
 import com.mvcjava.sagt.javafx.util.BasicStringValidator;
 import com.mvcjava.sagt.javafx.util.EditableCellFactory;
 
@@ -25,7 +27,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -35,7 +39,6 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
@@ -44,11 +47,8 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.cell.ComboBoxTableCell;
-import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.util.StringConverter;
-import javafx.util.converter.DefaultStringConverter;
 
 /**
  *
@@ -81,6 +81,7 @@ public class ProductController {
     private ObservableList<Category> avaibleCategories;
     
     private Map<UUID, Map<String, Object>> productsToUpdate;
+    private Map<UUID, Set<UUID>> categoriesToUpdate;
     
     private BasicStringValidator stringValidator;
    
@@ -101,6 +102,7 @@ public class ProductController {
         loadProducts();
         
         productsToUpdate = new HashMap<UUID, Map<String, Object>>();
+        categoriesToUpdate = new HashMap<UUID, Set<UUID>>();
     }
     
     private void initializeDependencies() {
@@ -160,6 +162,7 @@ public class ProductController {
                 true)
         );
         purchasePriceColumn.setEditable(true);
+        purchasePriceColumn.setOnEditCommit(this::handleNumberEdit);
         
         salePriceColumn = new TableColumn<>("Precio de venta");
         salePriceColumn.setUserData("precio_venta");
@@ -171,6 +174,7 @@ public class ProductController {
                 true)
         );
         salePriceColumn.setEditable(true);
+        salePriceColumn.setOnEditCommit(this::handleNumberEdit);
         
         stockColumn = new TableColumn<>("Stock");
         stockColumn.setUserData("stock");
@@ -182,6 +186,7 @@ public class ProductController {
                 false)
         );
         stockColumn.setEditable(true);
+        stockColumn.setOnEditCommit(this::handleNumberEdit);
         
         minStockColumn = new TableColumn<>("Stock minimo");
         minStockColumn.setUserData("stock_minimo");
@@ -193,6 +198,7 @@ public class ProductController {
                 false)
         );
         minStockColumn.setEditable(true);
+        minStockColumn.setOnEditCommit(this::handleNumberEdit);
         
         supplierColumn = new TableColumn<>("Proveedor");
         supplierColumn.setUserData("id_proveedor");
@@ -221,6 +227,7 @@ public class ProductController {
             return cell;
         });
         supplierColumn.setEditable(true);
+        supplierColumn.setOnEditCommit(col -> handleSupplierEdit(col));
         
         loadedByNameColumn = new TableColumn<>("Cargado por");
         loadedByNameColumn.setCellValueFactory(cellData -> 
@@ -273,7 +280,6 @@ public class ProductController {
             };
         });
         categoriesColumn.setEditable(true);
-        //categoriesColumn.setOnEditStart(e -> openCategoriesDialog(e.getRowValue()));
         
         productsTable.getColumns().addAll(
                 idColumn,
@@ -300,12 +306,34 @@ public class ProductController {
         productsTable.refresh();
     }
     
+    @FXML
+    protected void saveChanges(ActionEvent e) {
+        if (!productsToUpdate.isEmpty()) {
+            productsToUpdate.forEach((k, v) -> {
+                try {
+                    productService.updateProduct(k, v);
+                } catch (BusinessException ex) {
+                    AlertUtils.showError(ex.getMessage());
+                }
+            });
+        }
+        
+        if (!categoriesToUpdate.isEmpty()) {
+            System.out.println("Actualizando categorias");
+            try {
+                productService.updateProductCategories(categoriesToUpdate);
+            } catch (BusinessException ex) {
+                AlertUtils.showError(ex.getMessage());
+            }
+        }
+    }
+    
     private void loadCategories() {
         try {
             List<Category> categories = categoryService.getAll();
             avaibleCategories.setAll(categories);
         } catch (DataAccessException ex) {
-            showError(ex.getMessage());
+            AlertUtils.showError(ex.getMessage());
         }
     }
     
@@ -314,7 +342,7 @@ public class ProductController {
             List<Supplier> suppliers = supplierService.getAll();
             avaibleSuppliers.setAll(suppliers);
         } catch (DataAccessException ex) {
-            showError(ex.getMessage());
+            AlertUtils.showError(ex.getMessage());
         }
     }
     
@@ -334,7 +362,7 @@ public class ProductController {
            productViewModels.setAll(viewModels);
            
        } catch (DataAccessException ex) {
-           showError("Error al cargar productos: " + ex.getMessage());
+           AlertUtils.showError(ex.getMessage());
        }
     }
     
@@ -411,54 +439,25 @@ public class ProductController {
         Optional<List<Category>> result = dialog.showAndWait();
         result.ifPresent(selectedCategories -> {
             //Manejar las categorias actualizadas
-            viewModel.setCategories(selectedCategories);
+            if (!viewModel.getCategories().equals(selectedCategories)) {
+                viewModel.setCategories(selectedCategories);
+                
+                Set<UUID> idsCategories = selectedCategories.stream()
+                        .map(Category::getId)
+                        .collect(Collectors.toSet());
+                
+                categoriesToUpdate.put(viewModel.getId(), idsCategories);
+                
+                System.out.println("Categorias para actualizar:");
+                
+                categoriesToUpdate.forEach((k,v) -> {
+                    System.out.println("Producto: " + k.toString());
+                    v.forEach((val) -> {
+                        System.out.println("    category: " + val.toString());
+                    });
+                });
+            }
         });
-    }
-    
-    private void showError(String message) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle("Error");
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
-    }
-    
-    private TextFieldTableCell<ProductViewModel, String> createTextFieldForString (TableColumn<ProductViewModel, String> col) {
-        return new TextFieldTableCell<ProductViewModel, String>(new DefaultStringConverter()) {
-            //Se valida antes de que se haga el commit para no setear el texto de la celda con texto que no corresponde
-            @Override
-            public void commitEdit(String t) {
-                try {
-                    stringValidator.validate(t, 3, 100, col.getText());
-                    super.commitEdit(t);
-
-                } catch (IllegalArgumentException ex) {
-                    showError(ex.getMessage());
-                    cancelEdit();
-                }
-            }
-        };
-    }
-    
-    private TextFieldTableCell<ProductViewModel, Number> createTextFieldForFloat (TableColumn<ProductViewModel, Number> col, StringConverter<Number> converter) {
-        return new TextFieldTableCell<ProductViewModel, Number>(converter) {
-            //Validacion antes de actualizar la property
-            @Override
-            public void commitEdit(Number t) {
-                try {
-                    if (t == null) {
-                        cancelEdit();
-                    } else if (t.floatValue() < 0) {
-                        throw new IllegalArgumentException("El campo '" + col.getText() + "' no puede ser negativo.");
-                    }
-                    //Posteriormente manejar validaciones de negocio
-                    super.commitEdit(t);
-                } catch (IllegalArgumentException ex) {
-                    showError(ex.getMessage());
-                    cancelEdit();
-                }
-            }
-        };
     }
     
     private void handleStringEdit(TableColumn.CellEditEvent<ProductViewModel, String> e) {
@@ -476,60 +475,40 @@ public class ProductController {
                 System.out.println("Actualizaciones para el producto: " + key.toString());
                 v.forEach((k, nv) -> System.out.println("Key: " + k + " Value: " + nv));
             });
-            
-            System.out.println("Valor de la property: " + vm.nameProperty());
         }
     }
     
-    private StringConverter<Number> createFloatConverter() {
-        return new StringConverter<Number>() {
-            @Override
-            public String toString(Number number) {
-                if (number == null) {
-                    return "";
-                }
-                
-                return String.format("$%.2f", number.floatValue());
-            }
+    private void handleNumberEdit(TableColumn.CellEditEvent<ProductViewModel, Number> e) {
+        System.out.println("Entra en handleNumberEdit");
+        System.out.println("Viejo: " + e.getOldValue() + " Nuevo: " + e.getNewValue());
+        if (e.getOldValue() != e.getNewValue()) {
+            ProductViewModel vm = e.getRowValue();
+            UUID productId = vm.getId();
+            Number value = e.getNewValue();
+            String fieldName = e.getTableColumn().getUserData().toString();
             
-            @Override
-            public Number fromString(String string) {
-                if (string == null || string.trim().isEmpty()) {
-                    return 0;
-                }
-                string = string.replace("$", "").trim();
-                try {
-                    return Float.valueOf(string);
-                } catch (NumberFormatException ex) {
-                    showError("Formato de numero inválido.\n\n*Sólo use el punto (.) para decimales.*\n*No use el punto (.) o la coma (,) para separar miles.*"); 
-                    return null;
-                }
-            }
-        };
+            productsToUpdate.computeIfAbsent(productId, v -> new HashMap<>()).put(fieldName, value);
+            productsToUpdate.forEach((key ,v) -> {
+                System.out.println("Actualizaciones para el producto: " + key.toString());
+                v.forEach((k, nv) -> System.out.println("Key: " + k + " Value: " + nv));
+            });
+        }
     }
     
-    private StringConverter<Number> createIntegerConverter() {
-        return new StringConverter<Number>() {
-            @Override
-            public String toString(Number number) {
-                if (number == null) {
-                    return "";
-                }
-                return String.valueOf(number.intValue());
-            }
-
-            @Override
-            public Number fromString(String string) {
-                if (string == null || string.trim().isEmpty()) {
-                    return 0;
-                }
-                try {
-                    return Integer.valueOf(string.trim());
-                } catch (NumberFormatException ex) {
-                    showError("Formato de numero inválido.\n\n*Sólo se admiten números enteros*");
-                    return null;
-                }
-            }
-        };
+    private void handleSupplierEdit(TableColumn.CellEditEvent<ProductViewModel, Supplier> e) {
+        if (!e.getNewValue().equals(e.getOldValue())) {
+            ProductViewModel vm = e.getRowValue();
+            UUID productId = vm.getId();
+            Supplier value = e.getNewValue();
+            String fieldName = e.getTableColumn().getUserData().toString();
+            
+            vm.supplierProperty().set(value);
+            
+            productsToUpdate.computeIfAbsent(productId, v -> new HashMap<>()).put(fieldName, value.getId());
+            productsToUpdate.forEach((key ,v) -> {
+                System.out.println("Actualizaciones para el producto: " + key.toString());
+                v.forEach((k, nv) -> System.out.println("Key: " + k + " Value: " + nv));
+            });
+        }
     }
 }

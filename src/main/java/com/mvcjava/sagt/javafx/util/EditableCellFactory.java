@@ -7,7 +7,6 @@ package com.mvcjava.sagt.javafx.util;
 import com.mvcjava.sagt.javafx.viewmodel.ProductViewModel;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
-import javafx.scene.control.Alert;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.cell.TextFieldTableCell;
@@ -53,11 +52,7 @@ public class EditableCellFactory<S,T> implements Callback<TableColumn<S,T>, Tabl
                     System.out.println("Ya se llamo a super de commitEdit");
                     
                 } catch (IllegalArgumentException ex) {
-                    Alert alert = new Alert(Alert.AlertType.ERROR);
-                    alert.setTitle("Error");
-                    alert.setContentText(ex.getMessage());
-                    alert.showAndWait();
-                    cancelEdit();
+                    AlertUtils.showError(ex.getMessage());
                 }
             }
         };
@@ -92,7 +87,6 @@ public class EditableCellFactory<S,T> implements Callback<TableColumn<S,T>, Tabl
         );
     }
     
-    //Arreglar y crear caso de integer converter
     private static StringConverter<Number> createFloatConverter() {
         return new StringConverter<Number>() {
             @Override
@@ -109,11 +103,7 @@ public class EditableCellFactory<S,T> implements Callback<TableColumn<S,T>, Tabl
                 try {
                     return Float.valueOf(string);
                 } catch (NumberFormatException ex) {
-                    //showError("Formato de numero inválido.\n\n*Sólo use el punto (.) para decimales.*\n*No use el punto (.) o la coma (,) para separar miles.*"); 
-                    Alert alert = new Alert(Alert.AlertType.ERROR);
-                    alert.setTitle("Error");
-                    alert.setContentText("Formato de numero inválido.\n\n*Sólo use el punto (.) para decimales.*\n*No use el punto (.) o la coma (,) para separar miles.*");
-                    alert.showAndWait();
+                    AlertUtils.showError("Formato de numero inválido.\n\n*Sólo use el punto (.) para decimales.*\n*No use el punto (.) o la coma (,) para separar miles.*");
                     return null;
                 }
             }
@@ -138,7 +128,7 @@ public class EditableCellFactory<S,T> implements Callback<TableColumn<S,T>, Tabl
                 try {
                     return Integer.valueOf(string.trim());
                 } catch (NumberFormatException ex) {
-                    //showError("Formato de numero inválido.\n\n*Sólo se admiten números enteros*");
+                    AlertUtils.showError("Formato de numero inválido.\n\n*Sólo se admiten números enteros*");
                     return null;
                 }
             }

@@ -10,6 +10,7 @@ import com.mvcjava.sagt.javafx.dao.model.Product;
 import com.mvcjava.sagt.javafx.dto.ProductWithRelations;
 import com.mvcjava.sagt.javafx.exception.BusinessException;
 import java.util.List;
+import java.util.Set;
 /**
  *
  * @author lucas
@@ -20,5 +21,6 @@ public interface ProductService {
     List<Product> getAll();
     List<ProductWithRelations> getAllWithRelations();
     void updateProduct(UUID id, Map<String, Object> updates) throws BusinessException;
+    void updateProductCategories(Map<UUID, Set<UUID>> updates) throws BusinessException;    
     void deleteProduct(UUID id) throws BusinessException;
 }

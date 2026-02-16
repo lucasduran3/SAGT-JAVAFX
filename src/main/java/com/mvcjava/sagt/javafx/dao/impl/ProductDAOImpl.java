@@ -10,6 +10,7 @@ import com.mvcjava.sagt.javafx.dao.model.Category;
 import com.mvcjava.sagt.javafx.dao.model.Product;
 import com.mvcjava.sagt.javafx.dto.ProductWithRelations;
 import com.mvcjava.sagt.javafx.exception.DataAccessException;
+import java.sql.Array;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -18,6 +19,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -153,13 +155,13 @@ public class ProductDAOImpl implements ProductDAO {
         
         if (updates.isEmpty()) return;
         
-        StringBuilder sql = new StringBuilder("UPDATE app.productos SET");
+        StringBuilder sql = new StringBuilder("UPDATE app.productos SET ");
         int idx = 0;
         for (Map.Entry<String, Object> e : updates.entrySet()) {
             if (idx++ > 0) sql.append(", ");
-            sql.append(e.getKey()).append(" = ?");
+            sql.append(e.getKey()).append(" = ? ");
         }
-        sql.append(" WHERE id = ?");
+        sql.append(" WHERE id = ? ");
         
         try (Connection conn = DatabaseManager.getConnection();
                 PreparedStatement stmt = conn.prepareStatement(sql.toString()))
@@ -178,6 +180,70 @@ public class ProductDAOImpl implements ProductDAO {
     }
 
     @Override
+    public void updateProductCategories(Map<UUID, Set<UUID>> updates) {
+        if (updates == null || updates.isEmpty()) {
+            return;
+        }
+        
+        Connection conn = null;
+        
+        try  {
+            conn = DatabaseManager.getConnection();
+            
+            String deleteSql = "DELETE FROM app.productos_categorias WHERE id_producto = ANY(?)";
+            
+            try (PreparedStatement deleteStmt = conn.prepareStatement(deleteSql)) {
+                conn.setAutoCommit(false);
+                UUID[] productsIds = updates.keySet().toArray(new UUID[0]);
+                Array sqlArray = conn.createArrayOf("uuid", productsIds);
+            
+                deleteStmt.setArray(1, sqlArray);
+                deleteStmt.executeUpdate();
+            }
+            
+            String insertSql = "INSERT INTO app.productos_categorias (id_producto, id_categoria) "
+                    + "VALUES(?, ?)";
+            
+            try (PreparedStatement insertStmt = conn.prepareStatement(insertSql)) {
+                for (Map.Entry<UUID, Set<UUID>> entry : updates.entrySet()) {
+                    UUID productId = entry.getKey();
+                    Set<UUID> categories = entry.getValue();
+                    
+                    for (UUID category : categories) {
+                        insertStmt.setObject(1, productId);
+                        insertStmt.setObject(2, category);
+                        insertStmt.addBatch();
+                    }
+                }
+                
+                //Ejecutar todos los inserts juntos
+                insertStmt.executeBatch();
+            }
+            
+            conn.commit();
+        } catch (SQLException ex) {
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException rollbackEx) {
+                    System.err.print("Error en el rollback: " + rollbackEx.getMessage());
+                }
+            }
+            
+            throw new DataAccessException("Error al actualizar categorias de productos", ex);
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(false);
+                    conn.close();
+                } catch (SQLException ex) {
+                    System.err.println("Error al cerrar conexion: " + ex.getMessage());
+                }
+            }
+        }
+    }
+
+    @Override
     public void deleteProduct(UUID id) {
         String sql = "DELETE FROM app.productos WHERE id = ?";
         try (Connection conn = DatabaseManager.getConnection();
@@ -191,8 +257,8 @@ public class ProductDAOImpl implements ProductDAO {
     }
 
     @Override
-    public boolean alreadyExist(String name, String model, String brand) {
-        String sql = "SELECT 1 FROM app.productos WHERE nombre = ? AND marca = ? AND modelo = ? LIMIT 1";
+    public boolean alreadyExist(UUID id, String name, String model, String brand) {
+        String sql = "SELECT 1 FROM app.productos WHERE nombre = ? AND marca = ? AND modelo = ? AND id <> ? LIMIT 1";
         
         try (Connection conn = DatabaseManager.getConnection();
                 PreparedStatement stmt = conn.prepareStatement(sql)) 
@@ -200,6 +266,7 @@ public class ProductDAOImpl implements ProductDAO {
             stmt.setString(1, name);
             stmt.setString(2, brand);
             stmt.setString(3, model);
+            stmt.setObject(4, id);
             
             try (ResultSet rs = stmt.executeQuery()) {
                 return rs.next();
@@ -243,8 +310,10 @@ public class ProductDAOImpl implements ProductDAO {
         }
         
         for (int i = 0; i < ids.length; i++) {
-            Category category = new Category(ids[i], names[i]);
-            categories.add(category);
+            if (ids[i] != null) {
+                Category category = new Category(ids[i], names[i]);
+                categories.add(category);                
+            }
         }
         
         return categories;
