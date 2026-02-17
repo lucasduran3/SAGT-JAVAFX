@@ -378,74 +378,20 @@ public class ProductController {
     }
     
     private void openCategoriesDialog(ProductViewModel viewModel) {
-        Dialog<List<Category>> dialog = new Dialog<>();
-        dialog.setTitle("Gestionar categorias");
-        dialog.setHeaderText("Producto: " + viewModel.nameProperty().getValue());
+        List<Category> result = CheckBoxDialogController.showDialog(
+                productsTable.getScene().getWindow(),
+                "Gestionar categorias",
+                "Producto: " + viewModel.nameProperty().getValue(),
+                "Seleccione las categorias que desea agregar a este producto: ",
+                avaibleCategories,
+                viewModel.getCategories()
+        );
         
-        VBox content = new VBox(15);
-        content.setPadding(new Insets(20));
-        content.setAlignment(Pos.TOP_LEFT);
-        
-        Label instruction = new Label("Seleccione las categorias que desea agregar a este producto:");
-        
-        VBox checkContainer = new VBox(8);
-        checkContainer.setPadding(new Insets(10));
-        
-        //Mapa para trackear los checkboxes
-        Map<Category, CheckBox> checkBoxMap = new LinkedHashMap<>();
-        
-        //Obtener categorias actuales
-        List<Category> currentCategories = new ArrayList<>(viewModel.getCategories());
-        
-        for (Category category : avaibleCategories) {
-            CheckBox check = new CheckBox(category.getName());
-            //marcar si ya tiene esta categoria
-            boolean isSelected = currentCategories.stream()
-                    .anyMatch(c -> c.getId().equals(category.getId()));
-            check.setSelected(isSelected);
-            
-            checkBoxMap.put(category, check);
-            checkContainer.getChildren().add(check);
-        }
-        
-        //ScrollPane para muchas categorias
-        ScrollPane scrollPane = new ScrollPane(checkContainer);
-        scrollPane.setFitToWidth(true);
-        
-        //Agregar todo al contenedor
-        content.getChildren().addAll(instruction, scrollPane);
-        
-        dialog.getDialogPane().setContent(content);
-        
-        ButtonType saveButton = new ButtonType("Guardar", ButtonBar.ButtonData.OK_DONE);
-        ButtonType cancelButton = ButtonType.CANCEL;
-        dialog.getDialogPane().getButtonTypes().addAll(saveButton, cancelButton);
-        
-        //Convertir el resultado
-        dialog.setResultConverter(btn -> {
-            if (btn == saveButton) {
-                List<Category> selected = new ArrayList<>();
-                for (Map.Entry<Category, CheckBox> entry : checkBoxMap.entrySet()) {
-                    if (entry.getValue().isSelected()) {
-                        selected.add(entry.getKey());
-                    }
-                }
-                return selected;
-            }
-            return null;
-        });
-        
-        //Mostrar y procesar resultado
-        Optional<List<Category>> result = dialog.showAndWait();
-        result.ifPresent(selectedCategories -> {
-            //Manejar las categorias actualizadas
-            if (!viewModel.getCategories().equals(selectedCategories)) {
-                viewModel.setCategories(selectedCategories);
+        if (result != null) {
+            if (!viewModel.getCategories().equals(result)) {
+                viewModel.setCategories(result);
                 
-                Set<UUID> idsCategories = selectedCategories.stream()
-                        .map(Category::getId)
-                        .collect(Collectors.toSet());
-                
+                Set<UUID> idsCategories = result.stream().map(Category::getId).collect(Collectors.toSet());
                 categoriesToUpdate.put(viewModel.getId(), idsCategories);
                 
                 System.out.println("Categorias para actualizar:");
@@ -457,7 +403,7 @@ public class ProductController {
                     });
                 });
             }
-        });
+        }        
     }
     
     private void handleStringEdit(TableColumn.CellEditEvent<ProductViewModel, String> e) {
