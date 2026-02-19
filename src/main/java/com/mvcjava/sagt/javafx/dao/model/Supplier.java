@@ -37,7 +37,7 @@ public class Supplier {
 
     public void setName(String name) {
         stringValidator.validate(name, 3, 30, "nombre");
-        this.name = name;
+        this.name = name.trim().toLowerCase();
     }
     
     public void setPhone(String phone) {
@@ -47,27 +47,27 @@ public class Supplier {
     
     public void setEmail(String email) {
         stringValidator.validate(email, 4, 255, "email");
-        this.email = email;
+        this.email = email.trim().toLowerCase();
     }
     
     public void setDirection(String direction) {
         stringValidator.validate(direction, 3, 100, "direccion");
-        this.direction = direction;
+        this.direction = direction.trim().toLowerCase();
     }
     
     public void setWeb(String web) {
         stringValidator.validate(web, 4, 255, "web");
-        this.web = web;
+        this.web = web.trim().toLowerCase();
     }
     
     public void setLocation(String location) {
         stringValidator.validate(direction, 3, 50, "localidad");
-        this.location = location;
+        this.location = location.trim().toLowerCase();
     }
     
     public void setProvince(String province) {
         stringValidator.validate(province, 3, 50, "provincia");
-        this.province = province;
+        this.province = province.trim().toLowerCase();
     }
     
     //GETTERS

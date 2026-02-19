@@ -47,9 +47,7 @@ public class EditableCellFactory<S,T> implements Callback<TableColumn<S,T>, Tabl
                     
                     if (item != null) {
                         propertyUpdater.accept(item, newValue);
-                        System.out.println("Se actualiza property con: " + newValue);
                     }
-                    System.out.println("Ya se llamo a super de commitEdit");
                     
                 } catch (IllegalArgumentException ex) {
                     AlertUtils.showError(ex.getMessage());

@@ -5,12 +5,12 @@
 package com.mvcjava.sagt.javafx.service.interfaces;
 
 import com.mvcjava.sagt.javafx.dao.model.Category;
-import java.util.List;
+import java.util.Set;
 
 /**
  *
  * @author lucas
  */
 public interface CategoryService {
-    List<Category> getAll();
+    Set<Category> getAll();
 }

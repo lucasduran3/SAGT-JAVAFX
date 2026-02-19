@@ -42,6 +42,21 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    public void createProductWithCategories(Product product, Set<UUID> categoryIds) throws BusinessException {
+        boolean exists = productDAO.alreadyExist(product.getId(), product.getName(), product.getModel(), product.getBrand());
+        
+        if (exists) {
+            throw new BusinessException("Este producto ya existe: " + product.getName() + " " + product.getBrand() + " " + product.getModel());
+        }
+        
+        if (product.getPurchasePrice() > product.getSalePrice()) {
+            throw new BusinessException("El precio de venta debe ser mayor al precio de compra.");
+        }
+        
+        productDAO.addProductWithCategories(product, categoryIds);
+    }    
+
+    @Override
     public Product getProduct(UUID id) {
         return productDAO.getProduct(id);
     }
@@ -111,8 +126,6 @@ public class ProductServiceImpl implements ProductService {
         productDAO.updateProductCategories(updates);
     }
     
-    
-
     @Override
     public void deleteProduct(UUID id) throws BusinessException {
         Product currentProduct = productDAO.getProduct(id);

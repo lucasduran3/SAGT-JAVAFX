@@ -17,6 +17,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -57,6 +58,71 @@ public class ProductDAOImpl implements ProductDAO {
             stmt.executeUpdate();
         } catch (SQLException ex) {
             throw new DataAccessException("Error al guardar el producto: " + product.getName(), ex);
+        }
+    }
+
+    @Override
+    public void addProductWithCategories(Product product, Set<UUID> categoryIds) {
+        Connection conn = null;
+        
+        try {
+            conn = DatabaseManager.getConnection();
+            conn.setAutoCommit(false);
+            
+            String productSql = "INSERT INTO app.productos " +
+                "(id, nombre, marca, modelo, precio_compra, precio_venta, " +
+                "stock, stock_minimo, id_proveedor, cargado_por) " +
+                "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            
+            try (PreparedStatement stmt = conn.prepareStatement(productSql)) {
+                stmt.setObject(1, product.getId());
+                stmt.setString(2, product.getName());
+                stmt.setString(3, product.getBrand());
+                stmt.setString(4, product.getModel());
+                stmt.setFloat(5, product.getPurchasePrice());
+                stmt.setFloat(6, product.getSalePrice());
+                stmt.setInt(7, product.getStock());
+                stmt.setInt(8, product.getMinStock());
+                stmt.setObject(9, product.getIdSupplier());
+                stmt.setObject(10, product.getLoadedBy());
+                stmt.executeUpdate();
+            }
+            
+            //Insertar categorias si hay
+            if (categoryIds != null && !categoryIds.isEmpty()) {
+                String categorySql = "INSERT INTO app.productos_categorias " +
+                    "(id_producto, id_categoria) VALUES(?, ?)";
+                
+                try (PreparedStatement stmt = conn.prepareStatement(categorySql)) {
+                    for (UUID id : categoryIds) {
+                        stmt.setObject(1, product.getId());
+                        stmt.setObject(2, id);
+                        stmt.addBatch();
+                    }
+                    stmt.executeBatch();
+                }
+            }
+            
+            conn.commit();
+        } catch (SQLException ex) {
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException rollbackEx) {
+                    System.err.println("Error en rollback: " + rollbackEx.getMessage());
+                }
+            }
+            
+            throw new DataAccessException("Error al crear producto con categorias", ex);
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(false);
+                    conn.close();
+                } catch (SQLException ex) {
+                    System.err.println("Error al cerrar conexión: " + ex.getMessage());
+                }
+            }
         }
     }
 
@@ -130,7 +196,7 @@ public class ProductDAOImpl implements ProductDAO {
                 
                 String loadedByName = rs.getString("u_nombre");
                 
-                List<Category> categories = extractCategoriesFromResultSet(rs);
+                Set<Category> categories = extractCategoriesFromResultSet(rs);
                 
                 ProductWithRelations dto = new ProductWithRelations(product, loadedByName != null ? loadedByName : "Desconocido", categories);
                 
@@ -295,8 +361,8 @@ public class ProductDAOImpl implements ProductDAO {
         return product;
     }
     
-    private List<Category> extractCategoriesFromResultSet(ResultSet rs) throws SQLException {
-        List<Category> categories = new ArrayList<>();
+    private Set<Category> extractCategoriesFromResultSet(ResultSet rs) throws SQLException {
+        Set<Category> categories = new HashSet<>();
         
         UUID[] ids = (UUID[]) rs.getArray("categorias_id").getArray();
         String[] names = (String[]) rs.getArray("categorias_nombre").getArray();

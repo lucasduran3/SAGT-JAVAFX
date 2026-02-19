@@ -5,12 +5,12 @@
 package com.mvcjava.sagt.javafx.dao.interfaces;
 
 import com.mvcjava.sagt.javafx.dao.model.Category;
-import java.util.List;
+import java.util.Set;
 
 /**
  *
  * @author lucas
  */
 public interface CategoryDAO {
-    List<Category> findAll();
+    Set<Category> findAll();
 }

@@ -17,6 +17,7 @@ import java.util.Set;
  */
 public interface ProductService { 
     void createProduct(Product product) throws BusinessException;
+    void createProductWithCategories(Product product, Set<UUID> categoryIds) throws BusinessException;
     Product getProduct(UUID id);
     List<Product> getAll();
     List<ProductWithRelations> getAllWithRelations();

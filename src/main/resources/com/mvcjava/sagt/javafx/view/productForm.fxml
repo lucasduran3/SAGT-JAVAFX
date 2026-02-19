@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<DialogPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            prefWidth="800">
+
+    <headerText>
+        Crear Producto
+    </headerText>
+
+    <content>
+        <VBox spacing="20">
+            <padding>
+                <Insets top="10" right="10" bottom="10" left="10"/>
+            </padding>
+
+            <Label text="Complete todos los campos para crear un producto.&#10;Los campos con * son obligatorios" 
+                   wrapText="true"/>
+
+            <GridPane hgap="30" vgap="15">
+                <columnConstraints>
+                    <ColumnConstraints percentWidth="50" hgrow="ALWAYS"/>
+                    <ColumnConstraints percentWidth="50" hgrow="ALWAYS"/>
+                </columnConstraints>
+
+                <VBox spacing="5" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                    <Label text="* Nombre"/>
+                    <TextField fx:id="nameField"/>                    
+                    <Label fx:id="errorName"></Label>
+                </VBox>
+
+                <VBox spacing="5" GridPane.columnIndex="1" GridPane.rowIndex="0" GridPane.rowSpan="3">
+                    <Label text="Categorias"/>
+                    <ScrollPane fx:id="categoriesScrollPane" fitToWidth="true" VBox.vgrow="ALWAYS">
+                        <content>
+                            <VBox fx:id="categoriesContainer" spacing="5">
+                                <padding>
+                                    <Insets top="5" right="5" bottom="5" left="5"/>
+                                </padding>
+                            </VBox>
+                        </content>
+                    </ScrollPane>
+                    <Label></Label>
+                </VBox>
+
+                <VBox spacing="5" GridPane.columnIndex="0" GridPane.rowIndex="1">
+                    <Label text="* Marca"/>
+                    <TextField fx:id="brandField"/>
+                    <Label fx:id="errorBrand"></Label>
+                </VBox>
+                <VBox spacing="5" GridPane.columnIndex="0" GridPane.rowIndex="2">
+                    <Label text="* Modelo"/>
+                    <TextField fx:id="modelField"/>
+                    <Label fx:id="errorModel"></Label>
+                </VBox>
+                <VBox spacing="5" GridPane.columnIndex="0" GridPane.rowIndex="3">
+                    <Label text="* Precio de compra"/>
+                    <TextField fx:id="purchasePriceField"/>
+                    <Label fx:id="errorPurchasePrice"></Label>
+                </VBox>
+
+                <VBox spacing="5" GridPane.columnIndex="1" GridPane.rowIndex="3">
+                    <Label text="* Precio de venta"/>
+                    <TextField fx:id="salePriceField"/>
+                    <Label fx:id="errorSalePrice"></Label>
+                </VBox>
+
+                <VBox spacing="5" GridPane.columnIndex="0" GridPane.rowIndex="4">
+                    <Label text="* Stock"/>
+                    <TextField fx:id="stockField"/>
+                    <Label fx:id="errorStock"></Label>
+                </VBox>
+
+                <VBox spacing="5" GridPane.columnIndex="1" GridPane.rowIndex="4">
+                    <Label text="* Stock mínimo"/>
+                    <TextField fx:id="minStockField"/>
+                    <Label fx:id="errorMinStock"></Label>
+                </VBox>
+
+                <VBox spacing="5" GridPane.columnIndex="0" GridPane.rowIndex="5">
+                    <Label text="* Proveedor"/>
+                    <ComboBox fx:id="supplierComboBox" maxWidth="Infinity"/>
+                    <Label fx:id="errorSupplier"></Label>
+                </VBox>
+                </GridPane>
+        </VBox>
+    </content>
+
+    <buttonTypes>
+        <ButtonType fx:constant="OK"/>
+        <ButtonType fx:constant="CANCEL"/>
+    </buttonTypes>
+
+</DialogPane>

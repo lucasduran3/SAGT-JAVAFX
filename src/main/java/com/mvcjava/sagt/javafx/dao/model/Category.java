@@ -32,7 +32,7 @@ public class Category {
     
     private void setName(String name) {
         stringValidator.validate(name, 3, 30, "nombre_categoria");
-        this.name = name;
+        this.name = name.trim().toLowerCase();
     }
     
     public UUID getId() {

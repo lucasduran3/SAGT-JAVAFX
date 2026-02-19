@@ -9,6 +9,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 import com.mvcjava.sagt.javafx.util.BasicStringValidator;
+import java.util.Objects;
 
 /**
  *
@@ -37,6 +38,8 @@ public class Product {
     public Product(UUID id, String name, String brand, String model, float purchasePrice, 
                     float salePrice, int stock, int minStock, UUID idSupplier, 
                     UUID loadedBy, Timestamp entryDate, Timestamp updateDate) {
+        
+        stringValidator = new BasicStringValidator();        
         this.setId(id);
         this.setName(name);
         this.setBrand(brand);
@@ -49,12 +52,12 @@ public class Product {
         this.setLoadedBy(loadedBy);
         this.setEntryDate(entryDate);
         this.setUpdateDate(updateDate);
-        
-        stringValidator = new BasicStringValidator();
     }
     
     public Product(UUID id, String name, String brand, String model, float purchasePrice, 
                     float salePrice, int stock, int minStock, UUID idSupplier, UUID loadedBy ) {
+        
+        stringValidator = new BasicStringValidator();
         this.setId(id);
         this.setName(name);
         this.setBrand(brand);
@@ -67,12 +70,12 @@ public class Product {
         this.setLoadedBy(loadedBy);
         this.setEntryDate(Timestamp.from(Instant.now()));
         this.setUpdateDate(null);
-        
-        stringValidator = new BasicStringValidator();
     }
     
     public Product(String name, String brand, String model, float purchasePrice, 
                     float salePrice, int stock, int minStock, UUID idSupplier, UUID loadedBy ) {
+        
+        stringValidator = new BasicStringValidator();
         this.setId(null);
         this.setName(name);
         this.setBrand(brand);
@@ -85,31 +88,29 @@ public class Product {
         this.setLoadedBy(loadedBy);
         this.setEntryDate(Timestamp.from(Instant.now()));
         this.setUpdateDate(null);
-        
-        stringValidator = new BasicStringValidator();
     }
     
     /*SETTERS*/
     public void setId(UUID id) {
         if (id == null) {
-            throw new IllegalArgumentException("El id no puede ser null.");
+            throw new IllegalArgumentException("El id no puede ser null");
         }
         this.id = id; 
     }
     
     public void setName(String name) {
         stringValidator.validate(name, 3, 100, "nombre");
-        this.name = name; 
+        this.name = name.trim().toLowerCase(); 
     }
     
     public void setBrand(String brand) {
         stringValidator.validate(brand, 1, 100, "marca");
-        this.brand = brand;
+        this.brand = brand.trim().toLowerCase();
     }
     
     public void setModel(String model) {
         stringValidator.validate(model, 1, 100, "modelo");
-        this.model = model;
+        this.model = model.trim().toLowerCase();
     }
     
     public void setPurchasePrice(float purchasePrice) {
@@ -162,9 +163,6 @@ public class Product {
     }
     
     public void setUpdateDate(Timestamp updateDate) {
-        if (updateDate == null) {
-            throw new IllegalArgumentException("La fecha de actualizacion no puede ser null.");
-        }
         this.updateDate = updateDate; 
     }
     
@@ -181,4 +179,20 @@ public class Product {
     public UUID getLoadedBy() { return this.loadedBy; }
     public Timestamp getEntryDate() { return this.entryDate; }
     public Timestamp getUpdateDate() { return this.updateDate; }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        Product other = (Product) obj;
+        
+        return Objects.equals(name, other.name) &&
+                Objects.equals(brand, other.brand) &&
+                Objects.equals(model, other.model);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, brand, model);
+    }
 }

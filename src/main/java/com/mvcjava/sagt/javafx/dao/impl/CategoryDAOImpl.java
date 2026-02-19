@@ -13,7 +13,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -23,8 +25,8 @@ import java.util.UUID;
 public class CategoryDAOImpl implements CategoryDAO{
 
     @Override
-    public List<Category> findAll() {
-        List<Category> categories = new ArrayList<>();
+    public Set<Category> findAll() {
+        Set<Category> categories = new HashSet<>();
         String sql = "SELECT * FROM app.categorias";
         
         try (Connection conn = DatabaseManager.getConnection();

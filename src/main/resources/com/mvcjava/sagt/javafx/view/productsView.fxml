@@ -24,10 +24,10 @@
             </padding>
             
             <!-- Botones para futuras funcionalidades -->
-            <Button text="Nuevo Producto" />
-            <Button text="Eliminar Seleccionado"/>
+            <Button text="Nuevo Producto" onAction="#handleAddProduct"/>
+            <Button text="Eliminar Seleccionado" onAction="#handleDeleteProduct"/>
             <Button text="Refrescar" onAction="#refresh"/>
-            <Button text="Guardar cambios" onAction="#saveChanges"/>
+            <Button text="Guardar cambios" onAction="#handleSaveChanges"/>
         </HBox>
     </bottom>
     

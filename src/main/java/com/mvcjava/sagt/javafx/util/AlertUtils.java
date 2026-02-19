@@ -4,7 +4,9 @@
  */
 package com.mvcjava.sagt.javafx.util;
 
+import java.util.Optional;
 import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 
 /**
  *
@@ -17,5 +19,12 @@ public class AlertUtils {
         alert.setTitle("Error");
         alert.setContentText(message);
         alert.showAndWait();    
+    }
+    
+    public static Optional<ButtonType> showConfirmAlert(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle(title);
+        alert.setContentText(message);
+        return alert.showAndWait();
     }
 }

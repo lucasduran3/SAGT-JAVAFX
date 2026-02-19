@@ -11,18 +11,21 @@ import com.mvcjava.sagt.javafx.dto.ProductWithRelations;
 import java.sql.Timestamp;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.FloatProperty;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleFloatProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.StringProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
-import javafx.collections.ListChangeListener;
-import javafx.collections.ObservableList;
+import javafx.collections.ObservableSet;
+import javafx.collections.SetChangeListener;
 
 /**
  *
@@ -39,9 +42,14 @@ public class ProductViewModel {
     private final IntegerProperty minStock;
     private final StringProperty loadedByName;
     private final ObjectProperty<Supplier> supplier;
+    private final ObjectProperty<Timestamp> updateDate;
     
-    private final ObservableList<Category> categories;
+    private final ObservableSet<Category> categories;
     private final StringProperty categoriesDisplay;
+    
+    private final BooleanProperty selected;
+    
+    private boolean isNew;
     
     //Constructor recibe producto + nombres
     public ProductViewModel(ProductWithRelations dto, Supplier supplier) {
@@ -56,10 +64,16 @@ public class ProductViewModel {
         this.minStock = new SimpleIntegerProperty(product.getMinStock());
         this.loadedByName = new SimpleStringProperty(dto.getLoadedByName());
         this.supplier = new SimpleObjectProperty<>(supplier);
+        this.updateDate = new SimpleObjectProperty<>(product.getUpdateDate());
         
-        this.categories = FXCollections.observableArrayList(dto.getCategories());
+        this.categories = FXCollections.observableSet(dto.getCategories());
         this.categoriesDisplay = new SimpleStringProperty();
+        
+        this.selected = new SimpleBooleanProperty(false);
+        
         updateCategoriesDisplay();
+        
+        this.isNew = false;
         
         setupSync();
     }
@@ -73,6 +87,8 @@ public class ProductViewModel {
         salePrice.addListener((obs, old, newVal) -> product.setSalePrice(newVal.floatValue()));
         stock.addListener((obs, old, newVal) -> product.setStock(newVal.intValue()));
         minStock.addListener((obs, old, newVal) -> product.setMinStock(newVal.intValue()));
+        updateDate.addListener((obs, old, newVal) -> product.setUpdateDate(newVal));
+        
         supplier.addListener((o, cl, newVal) -> {
             if (newVal != null) {
                 product.setIdSupplier(newVal.getId());
@@ -80,9 +96,16 @@ public class ProductViewModel {
         });
         
         //Actualiza el display cuando cambian las categorias
-        this.categories.addListener((ListChangeListener<Category>) change -> {
+        this.categories.addListener((SetChangeListener<Category>) change -> {
             updateCategoriesDisplay();
         });
+    }
+    
+    public void setIsNew(boolean isNew) {
+        this.isNew = isNew;
+    }
+    public boolean getIsNew() {
+        return this.isNew;
     }
     
     //Getters de properties
@@ -116,8 +139,18 @@ public class ProductViewModel {
     public StringProperty categoriesDisplayProperty() {
         return categoriesDisplay;
     }
-    public ObservableList<Category> getCategories() {
+    public ObservableSet<Category> getCategories() {
         return categories;
+    }
+    public ObjectProperty<Timestamp> updateDateProperty() {
+        return updateDate;
+    }
+    public BooleanProperty selectedProperty() {
+        return selected;
+    }
+    
+    public boolean isSelected() {
+        return selected.get();
     }
     
     //Getters de campos no editables
@@ -136,17 +169,15 @@ public class ProductViewModel {
     public Timestamp getEntryDate() {
         return product.getEntryDate();
     }
-    public Timestamp getUpdateDate() {
-        return product.getUpdateDate();
-    }
+
        
     //Getter modelo
     public Product getModel() {
         return this.product;
     }
     
-    public void setCategories(List<Category> categories) {
-        this.categories.setAll(categories);
+    public void setCategories(Set<Category> categories) {
+        this.categories.addAll(categories);
     }
     
     private void updateCategoriesDisplay() {
@@ -158,5 +189,19 @@ public class ProductViewModel {
                     .collect(Collectors.joining(", "));
             categoriesDisplay.set(display);
         }
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        ProductViewModel other = (ProductViewModel) obj;
+        
+        return Objects.equals(product, other.product);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(product);
     }
 }

@@ -8,7 +8,7 @@ import com.mvcjava.sagt.javafx.dao.impl.CategoryDAOImpl;
 import com.mvcjava.sagt.javafx.dao.interfaces.CategoryDAO;
 import com.mvcjava.sagt.javafx.dao.model.Category;
 import com.mvcjava.sagt.javafx.service.interfaces.CategoryService;
-import java.util.List;
+import java.util.Set;
 
 /**
  *
@@ -22,7 +22,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public List<Category> getAll() {
+    public Set<Category> getAll() {
         return this.categoryDAO.findAll();
     }
     

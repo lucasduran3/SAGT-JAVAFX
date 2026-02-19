@@ -5,6 +5,7 @@
 package com.mvcjava.sagt.javafx.controller;
 
 import com.mvcjava.sagt.javafx.dao.model.Category;
+import com.mvcjava.sagt.javafx.dao.model.Product;
 import com.mvcjava.sagt.javafx.service.interfaces.ProductService;
 import com.mvcjava.sagt.javafx.service.interfaces.SupplierService;
 import com.mvcjava.sagt.javafx.dao.model.Supplier;
@@ -21,9 +22,10 @@ import com.mvcjava.sagt.javafx.util.BasicStringValidator;
 import com.mvcjava.sagt.javafx.util.EditableCellFactory;
 
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -36,19 +38,16 @@ import javafx.fxml.FXML;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.collections.ObservableSet;
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
-import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TableCell;
+import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.ComboBoxTableCell;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
 
 /**
  *
@@ -62,6 +61,7 @@ public class ProductController {
     @FXML 
     private TableView<ProductViewModel> productsTable;
     
+    private TableColumn<ProductViewModel, Boolean> selectColumn;
     private TableColumn<ProductViewModel, UUID> idColumn;
     private TableColumn<ProductViewModel, String> nameColumn;
     private TableColumn<ProductViewModel, String> brandColumn;
@@ -78,13 +78,11 @@ public class ProductController {
     
     private ObservableList<ProductViewModel> productViewModels;
     private ObservableList<Supplier> avaibleSuppliers;
-    private ObservableList<Category> avaibleCategories;
+    private ObservableSet<Category> avaibleCategories;
     
     private Map<UUID, Map<String, Object>> productsToUpdate;
     private Map<UUID, Set<UUID>> categoriesToUpdate;
     
-    private BasicStringValidator stringValidator;
-   
     public ProductController() {}
     
     @FXML
@@ -92,7 +90,7 @@ public class ProductController {
         initializeDependencies();
         productViewModels = FXCollections.observableArrayList();
         avaibleSuppliers = FXCollections.observableArrayList();
-        avaibleCategories = FXCollections.observableArrayList();
+        avaibleCategories = FXCollections.observableSet();
         
         setupTableColumns();
         productsTable.setItems(productViewModels);
@@ -101,19 +99,25 @@ public class ProductController {
         loadSuppliers();
         loadProducts();
         
-        productsToUpdate = new HashMap<UUID, Map<String, Object>>();
-        categoriesToUpdate = new HashMap<UUID, Set<UUID>>();
+        productsToUpdate = new HashMap<>();
+        categoriesToUpdate = new HashMap<>();
     }
     
     private void initializeDependencies() {
         this.productService = new ProductServiceImpl();
         this.supplierService = new SupplierServiceImpl();
         this.categoryService = new CategoryServiceImpl();
-        
-        this.stringValidator = new BasicStringValidator();
     }
     
     private void setupTableColumns() {
+        selectColumn = new TableColumn<>();
+        selectColumn.setCellValueFactory(cellData -> cellData.getValue().selectedProperty());
+        selectColumn.setCellFactory(col -> new CheckBoxTableCell<>());
+        selectColumn.setEditable(true);
+        selectColumn.setResizable(false);
+        selectColumn.setMaxWidth(50);
+        selectColumn.setMinWidth(50);
+        
         idColumn = new TableColumn<>("ID");
         idColumn.setCellValueFactory(cellData -> 
             new SimpleObjectProperty<>(cellData.getValue().getId())
@@ -243,7 +247,7 @@ public class ProductController {
         
         updateDateColumn = new TableColumn<>("Fecha de actualizacion");
         updateDateColumn.setCellValueFactory(cellData -> 
-            new SimpleObjectProperty<>(cellData.getValue().getUpdateDate())
+            cellData.getValue().updateDateProperty()
         );
         updateDateColumn.setEditable(false);
         
@@ -282,6 +286,7 @@ public class ProductController {
         categoriesColumn.setEditable(true);
         
         productsTable.getColumns().addAll(
+                selectColumn,
                 idColumn,
                 nameColumn,
                 brandColumn,
@@ -302,12 +307,98 @@ public class ProductController {
     }
     
     @FXML
+    protected void handleAddProduct(ActionEvent e) {
+        ProductViewModel newProduct = ProductFormController.showProductForm(
+                avaibleCategories, 
+                avaibleSuppliers
+        );
+        
+        if (newProduct != null) {
+            newProduct.setIsNew(true);
+            if (!productViewModels.contains(newProduct)) {
+                productViewModels.add(newProduct);
+            } else {
+                AlertUtils.showError("Ya existe otro producto con el mismo nombre, marca y modelo.");
+            }
+        }
+    }
+    
+    @FXML
+    protected void handleDeleteProduct(ActionEvent e) {
+        Optional<ButtonType> btn = AlertUtils
+                .showConfirmAlert("Eliminar productos", "Desea eliminar los productos seleccionados? Los cambios son irreversibles");
+        
+        btn.ifPresent(p -> {
+            if (p == ButtonType.OK) {
+                List<ProductViewModel> selected = productViewModels.stream().filter(ProductViewModel::isSelected).collect(Collectors.toList());
+                
+                for (ProductViewModel vm : selected) {
+                    productViewModels.remove(vm);
+                    if (!vm.getIsNew()) {
+                        try {
+                            productService.deleteProduct(vm.getId());                            
+                        } catch (BusinessException ex) {
+                            AlertUtils.showError(ex.getMessage());
+                        }
+                    }
+                }
+            }
+        });
+        
+        loadCategories();
+        loadSuppliers();
+        loadProducts();
+        
+        productsTable.refresh();
+    }
+    
+    @FXML
     protected void refresh(ActionEvent e) {
         productsTable.refresh();
     }
     
     @FXML
-    protected void saveChanges(ActionEvent e) {
+    protected void handleSaveChanges(ActionEvent e) {
+        Optional<ButtonType> btn = AlertUtils
+                .showConfirmAlert("Guardar cambios", "Desea guardar los cambios en la base de datos?");
+        
+        btn.ifPresent(p -> {
+            if (p == ButtonType.OK) {
+                //Manejar actualizaciones
+                saveUpdatedProducts();
+        
+                //Manejar inserciones
+                saveNewProducts();
+        
+                //Manejar eliminaciones (proximo)
+                
+                //Actualizar y refrescar tabla
+                loadCategories();
+                loadSuppliers();
+                loadProducts();
+                
+                productsTable.refresh();
+            }
+        });
+    }
+    
+    private void saveNewProducts() {
+        List<ProductViewModel> newProducts = productViewModels.stream().filter(v -> v.getIsNew() == true).collect(Collectors.toList());
+        
+        for (ProductViewModel vm : newProducts) {
+            Product product = vm.getModel();
+            Set<UUID> categoryIds = vm.getCategories().stream().map(Category::getId).collect(Collectors.toSet());
+            
+            try {
+                productService.createProductWithCategories(product, categoryIds);
+                vm.setIsNew(false);
+            } catch (BusinessException ex) {
+                AlertUtils.showError(ex.getMessage());
+            }
+        }    
+    }
+    
+    private void saveUpdatedProducts() {
         if (!productsToUpdate.isEmpty()) {
             productsToUpdate.forEach((k, v) -> {
                 try {
@@ -325,13 +416,13 @@ public class ProductController {
             } catch (BusinessException ex) {
                 AlertUtils.showError(ex.getMessage());
             }
-        }
+        }        
     }
     
     private void loadCategories() {
         try {
-            List<Category> categories = categoryService.getAll();
-            avaibleCategories.setAll(categories);
+            Set<Category> categories = categoryService.getAll();
+            avaibleCategories.addAll(categories);
         } catch (DataAccessException ex) {
             AlertUtils.showError(ex.getMessage());
         }
@@ -383,44 +474,56 @@ public class ProductController {
                 "Gestionar categorias",
                 "Producto: " + viewModel.nameProperty().getValue(),
                 "Seleccione las categorias que desea agregar a este producto: ",
-                avaibleCategories,
-                viewModel.getCategories()
+                new ArrayList<>(avaibleCategories),
+                new ArrayList<>(viewModel.getCategories())
         );
         
         if (result != null) {
             if (!viewModel.getCategories().equals(result)) {
-                viewModel.setCategories(result);
+                viewModel.setCategories(new HashSet(result));
                 
-                Set<UUID> idsCategories = result.stream().map(Category::getId).collect(Collectors.toSet());
-                categoriesToUpdate.put(viewModel.getId(), idsCategories);
+                if (!viewModel.getIsNew()) {
+                    Set<UUID> idsCategories = result.stream().map(Category::getId).collect(Collectors.toSet());
+                    categoriesToUpdate.put(viewModel.getId(), idsCategories);
                 
-                System.out.println("Categorias para actualizar:");
+                    System.out.println("Categorias para actualizar:");
                 
-                categoriesToUpdate.forEach((k,v) -> {
-                    System.out.println("Producto: " + k.toString());
-                    v.forEach((val) -> {
-                        System.out.println("    category: " + val.toString());
-                    });
-                });
+                    productsToUpdate.computeIfAbsent(viewModel.getId(), v -> new HashMap<>())
+                            .put("fecha_actualizacion", Timestamp.from(Instant.now()));
+                    
+                    categoriesToUpdate.forEach((k,v) -> {
+                        System.out.println("Producto: " + k.toString());
+                        v.forEach((val) -> {
+                            System.out.println("    category: " + val.toString());
+                        });
+                    });    
+                }
             }
         }        
     }
     
     private void handleStringEdit(TableColumn.CellEditEvent<ProductViewModel, String> e) {
-        System.out.println("Entra en handleStringEdit");
-        System.out.println("Viejo: " + e.getOldValue() + " Nuevo: " + e.getNewValue());
         if (!e.getOldValue().equalsIgnoreCase(e.getNewValue())) {
             ProductViewModel vm = e.getRowValue();
             UUID productId = vm.getId();
             String value = e.getNewValue();
             String fieldName = e.getTableColumn().getUserData().toString();
+            
+            if (productViewModels.contains(vm)) {
+                System.out.println("Ya contiene este");
+            } else {
+                System.out.println("Esta bien, no lo contiene");
+            }
         
-            //ComputeIfAbsent siemrpe devuelve ese mapa asociado a esa id, sea viejo o nuevo
-            productsToUpdate.computeIfAbsent(productId, v -> new HashMap<>()).put(fieldName, value);
-            productsToUpdate.forEach((key ,v) -> {
-                System.out.println("Actualizaciones para el producto: " + key.toString());
-                v.forEach((k, nv) -> System.out.println("Key: " + k + " Value: " + nv));
-            });
+            if (!vm.getIsNew()) {
+                //ComputeIfAbsent siemrpe devuelve ese mapa asociado a esa id, sea viejo o nuevo
+                productsToUpdate.computeIfAbsent(productId, v -> new HashMap<>()).put(fieldName, value);
+                productsToUpdate.get(productId).put("fecha_actualizacion", Timestamp.from(Instant.now()));
+                productsToUpdate.forEach((key ,v) -> {
+                    System.out.println("Actualizaciones para el producto: " + key.toString());
+                    v.forEach((k, nv) -> System.out.println("Key: " + k + " Value: " + nv));
+                });
+            }
         }
     }
     
@@ -433,11 +536,14 @@ public class ProductController {
             Number value = e.getNewValue();
             String fieldName = e.getTableColumn().getUserData().toString();
             
-            productsToUpdate.computeIfAbsent(productId, v -> new HashMap<>()).put(fieldName, value);
-            productsToUpdate.forEach((key ,v) -> {
-                System.out.println("Actualizaciones para el producto: " + key.toString());
-                v.forEach((k, nv) -> System.out.println("Key: " + k + " Value: " + nv));
-            });
+            if (!vm.getIsNew()) {
+               productsToUpdate.computeIfAbsent(productId, v -> new HashMap<>()).put(fieldName, value);
+               productsToUpdate.get(productId).put("fecha_actualizacion", Timestamp.from(Instant.now()));
+                productsToUpdate.forEach((key ,v) -> {
+                    System.out.println("Actualizaciones para el producto: " + key.toString());
+                    v.forEach((k, nv) -> System.out.println("Key: " + k + " Value: " + nv));
+                }); 
+            }
         }
     }
     
@@ -450,11 +556,14 @@ public class ProductController {
             
             vm.supplierProperty().set(value);
             
-            productsToUpdate.computeIfAbsent(productId, v -> new HashMap<>()).put(fieldName, value.getId());
-            productsToUpdate.forEach((key ,v) -> {
-                System.out.println("Actualizaciones para el producto: " + key.toString());
-                v.forEach((k, nv) -> System.out.println("Key: " + k + " Value: " + nv));
-            });
+            if (!vm.getIsNew()) {
+                productsToUpdate.computeIfAbsent(productId, v -> new HashMap<>()).put(fieldName, value.getId());
+                productsToUpdate.get(productId).put("fecha_actualizacion", Timestamp.from(Instant.now()));
+                productsToUpdate.forEach((key ,v) -> {
+                    System.out.println("Actualizaciones para el producto: " + key.toString());
+                    v.forEach((k, nv) -> System.out.println("Key: " + k + " Value: " + nv));
+                });    
+            }
         }
     }
 }
