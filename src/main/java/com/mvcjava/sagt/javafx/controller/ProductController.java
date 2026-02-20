@@ -18,7 +18,6 @@ import com.mvcjava.sagt.javafx.exception.BusinessException;
 import com.mvcjava.sagt.javafx.service.impl.CategoryServiceImpl;
 import com.mvcjava.sagt.javafx.service.interfaces.CategoryService;
 import com.mvcjava.sagt.javafx.util.AlertUtils;
-import com.mvcjava.sagt.javafx.util.BasicStringValidator;
 import com.mvcjava.sagt.javafx.util.EditableCellFactory;
 
 import java.sql.Timestamp;
@@ -82,6 +81,7 @@ public class ProductController {
     
     private Map<UUID, Map<String, Object>> productsToUpdate;
     private Map<UUID, Set<UUID>> categoriesToUpdate;
+    private Set<ProductViewModel> productsToDelete;
     
     public ProductController() {}
     
@@ -101,6 +101,7 @@ public class ProductController {
         
         productsToUpdate = new HashMap<>();
         categoriesToUpdate = new HashMap<>();
+        productsToDelete = new HashSet<>();
     }
     
     private void initializeDependencies() {
@@ -326,28 +327,19 @@ public class ProductController {
     @FXML
     protected void handleDeleteProduct(ActionEvent e) {
         Optional<ButtonType> btn = AlertUtils
-                .showConfirmAlert("Eliminar productos", "Desea eliminar los productos seleccionados? Los cambios son irreversibles");
+                .showConfirmAlert("Eliminar productos", "Desea eliminar los productos seleccionados?"
+                        + "\nLos nuevos productos sin guardar no se podran recuperar");
         
         btn.ifPresent(p -> {
             if (p == ButtonType.OK) {
                 List<ProductViewModel> selected = productViewModels.stream().filter(ProductViewModel::isSelected).collect(Collectors.toList());
                 
                 for (ProductViewModel vm : selected) {
+                    productsToDelete.add(vm);
                     productViewModels.remove(vm);
-                    if (!vm.getIsNew()) {
-                        try {
-                            productService.deleteProduct(vm.getId());                            
-                        } catch (BusinessException ex) {
-                            AlertUtils.showError(ex.getMessage());
-                        }
-                    }
                 }
             }
         });
-        
-        loadCategories();
-        loadSuppliers();
-        loadProducts();
         
         productsTable.refresh();
     }
@@ -370,7 +362,8 @@ public class ProductController {
                 //Manejar inserciones
                 saveNewProducts();
         
-                //Manejar eliminaciones (proximo)
+                //Manejar eliminaciones 
+                saveDeleteProducts();
                 
                 //Actualizar y refrescar tabla
                 loadCategories();
@@ -380,6 +373,18 @@ public class ProductController {
                 productsTable.refresh();
             }
         });
+    }
+    
+    private void saveDeleteProducts() {
+        for (ProductViewModel vm : productsToDelete) {
+            if (!vm.getIsNew()) {
+                try {
+                    productService.deleteProduct(vm.getId());
+                } catch (BusinessException ex) {
+                    AlertUtils.showError(ex.getMessage());
+                }
+            }
+        }
     }
     
     private void saveNewProducts() {
