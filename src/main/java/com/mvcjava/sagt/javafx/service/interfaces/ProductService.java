@@ -24,4 +24,11 @@ public interface ProductService {
     void updateProduct(UUID id, Map<String, Object> updates) throws BusinessException;
     void updateProductCategories(Map<UUID, Set<UUID>> updates) throws BusinessException;    
     void deleteProduct(UUID id) throws BusinessException;
+    void saveChanges(
+            Map<Product, 
+            Set<UUID>> newProducts,
+            Map<UUID, Map<String, Object>> updatedProducts,
+            Map<UUID, Set<UUID>> updatedCategories,
+            Set<UUID> deletedProducts
+    ) throws BusinessException;
 }

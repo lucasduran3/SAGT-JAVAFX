@@ -10,7 +10,7 @@ import java.util.UUID;
  *
  * @author lucas
  */
-public class SessionContext { //Creo que deberia devolver un objeto profile en lugar
+public class SessionContext {
     private static UUID currentUserId;
     private static String currentUserName;
     

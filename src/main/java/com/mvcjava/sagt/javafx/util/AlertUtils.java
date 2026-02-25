@@ -27,4 +27,12 @@ public class AlertUtils {
         alert.setContentText(message);
         return alert.showAndWait();
     }
+    
+    public static void showSuccess(String title, String headerText, String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(headerText);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
 }

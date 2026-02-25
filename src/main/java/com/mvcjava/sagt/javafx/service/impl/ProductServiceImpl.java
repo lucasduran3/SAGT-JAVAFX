@@ -75,7 +75,7 @@ public class ProductServiceImpl implements ProductService {
     public void updateProduct(UUID id, Map<String, Object> updates) throws BusinessException {
         Product currentProduct = productDAO.getProduct(id);
         if (currentProduct == null) {
-            throw new BusinessException("El producto que quiere actualizar no existe.");
+            throw new BusinessException("El producto que quiere actualizar no existe: " + id);
         }
         
         String newName = updates.containsKey("nombre") ? (String) updates.get("nombre")
@@ -130,9 +130,34 @@ public class ProductServiceImpl implements ProductService {
     public void deleteProduct(UUID id) throws BusinessException {
         Product currentProduct = productDAO.getProduct(id);
         if (currentProduct == null) {
-            throw new BusinessException("El producto que quiere eliminar no existe.");
+            throw new BusinessException("El producto que quiere eliminar no existe: " + id);
         }
         productDAO.deleteProduct(id);
     }
-    
+
+    @Override
+    public void saveChanges (
+            Map<Product, 
+            Set<UUID>> newProducts, 
+            Map<UUID, Map<String, Object>> updatedProducts,
+            Map<UUID, Set<UUID>> updatedCategories,
+            Set<UUID> deletedProducts
+    ) throws BusinessException {
+        //Actualizacion
+        for (Map.Entry<UUID, Map<String, Object>> entry : updatedProducts.entrySet()) {
+            updateProduct(entry.getKey(), entry.getValue());
+        }
+        
+        updateProductCategories(updatedCategories);
+        
+        //Creacion
+        for (Map.Entry<Product, Set<UUID>> entry : newProducts.entrySet()) {
+            createProductWithCategories(entry.getKey(), entry.getValue());
+        }
+        
+        //Eliminación
+        for (UUID id : deletedProducts) {
+            deleteProduct(id);
+        }
+    }
 }

@@ -4,17 +4,18 @@
  */
 package com.mvcjava.sagt.javafx.controller;
 
+import com.mvcjava.sagt.javafx.async.ProductLoadService;
+import com.mvcjava.sagt.javafx.async.ProductSaveService;
 import com.mvcjava.sagt.javafx.dao.model.Category;
 import com.mvcjava.sagt.javafx.dao.model.Product;
 import com.mvcjava.sagt.javafx.service.interfaces.ProductService;
 import com.mvcjava.sagt.javafx.service.interfaces.SupplierService;
 import com.mvcjava.sagt.javafx.dao.model.Supplier;
-import com.mvcjava.sagt.javafx.exception.DataAccessException;
+import com.mvcjava.sagt.javafx.dto.ProductViewData;
 import com.mvcjava.sagt.javafx.service.impl.ProductServiceImpl;
 import com.mvcjava.sagt.javafx.service.impl.SupplierServiceImpl;
 import com.mvcjava.sagt.javafx.viewmodel.ProductViewModel;
 import com.mvcjava.sagt.javafx.dto.ProductWithRelations;
-import com.mvcjava.sagt.javafx.exception.BusinessException;
 import com.mvcjava.sagt.javafx.service.impl.CategoryServiceImpl;
 import com.mvcjava.sagt.javafx.service.interfaces.CategoryService;
 import com.mvcjava.sagt.javafx.util.AlertUtils;
@@ -83,6 +84,10 @@ public class ProductController {
     private Map<UUID, Set<UUID>> categoriesToUpdate;
     private Set<ProductViewModel> productsToDelete;
     
+    //Async helpers
+    private ProductLoadService loadService;
+    private ProductSaveService saveService;
+    
     public ProductController() {}
     
     @FXML
@@ -95,9 +100,7 @@ public class ProductController {
         setupTableColumns();
         productsTable.setItems(productViewModels);
         
-        loadCategories();
-        loadSuppliers();
-        loadProducts();
+        loadData();
         
         productsToUpdate = new HashMap<>();
         categoriesToUpdate = new HashMap<>();
@@ -108,6 +111,8 @@ public class ProductController {
         this.productService = new ProductServiceImpl();
         this.supplierService = new SupplierServiceImpl();
         this.categoryService = new CategoryServiceImpl();
+        this.loadService = new ProductLoadService(productService, supplierService, categoryService);
+        this.saveService = new ProductSaveService(productService);
     }
     
     private void setupTableColumns() {
@@ -356,110 +361,72 @@ public class ProductController {
         
         btn.ifPresent(p -> {
             if (p == ButtonType.OK) {
-                //Manejar actualizaciones
-                saveUpdatedProducts();
-        
-                //Manejar inserciones
-                saveNewProducts();
-        
-                //Manejar eliminaciones 
-                saveDeleteProducts();
-                
-                //Actualizar y refrescar tabla
-                loadCategories();
-                loadSuppliers();
-                loadProducts();
-                
-                productsTable.refresh();
+                saveData();
             }
         });
     }
     
-    private void saveDeleteProducts() {
-        for (ProductViewModel vm : productsToDelete) {
-            if (!vm.getIsNew()) {
-                try {
-                    productService.deleteProduct(vm.getId());
-                } catch (BusinessException ex) {
-                    AlertUtils.showError(ex.getMessage());
-                }
-            }
-        }
-    }
-    
-    private void saveNewProducts() {
-        List<ProductViewModel> newProducts = productViewModels.stream().filter(v -> v.getIsNew() == true).collect(Collectors.toList());
-        
-        for (ProductViewModel vm : newProducts) {
-            Product product = vm.getModel();
-            Set<UUID> categoryIds = vm.getCategories().stream().map(Category::getId).collect(Collectors.toSet());
+    private void saveData() {
+        if (!saveService.isRunning()) {
+            saveService.reset();
             
-            try {
-                productService.createProductWithCategories(product, categoryIds);
-                vm.setIsNew(false);
-            } catch (BusinessException ex) {
-                AlertUtils.showError(ex.getMessage());
-            }
-        }    
-    }
-    
-    private void saveUpdatedProducts() {
-        if (!productsToUpdate.isEmpty()) {
-            productsToUpdate.forEach((k, v) -> {
-                try {
-                    productService.updateProduct(k, v);
-                } catch (BusinessException ex) {
-                    AlertUtils.showError(ex.getMessage());
-                }
-            });
-        }
+            List<ProductViewModel> newProductsVm = productViewModels.stream().filter(v -> v.getIsNew() == true).collect(Collectors.toList());
+            Map<Product, Set<UUID>> newProductsWithCategories = new HashMap<>();
         
-        if (!categoriesToUpdate.isEmpty()) {
-            System.out.println("Actualizando categorias");
-            try {
-                productService.updateProductCategories(categoriesToUpdate);
-            } catch (BusinessException ex) {
-                AlertUtils.showError(ex.getMessage());
+            for (ProductViewModel vm : newProductsVm) {
+                Set<UUID> categories = vm.getCategories().stream().map(Category::getId).collect(Collectors.toSet());
+                newProductsWithCategories.put(vm.getModel(), categories);
             }
-        }        
-    }
-    
-    private void loadCategories() {
-        try {
-            Set<Category> categories = categoryService.getAll();
-            avaibleCategories.addAll(categories);
-        } catch (DataAccessException ex) {
-            AlertUtils.showError(ex.getMessage());
+        
+            Set<UUID> deletedProducts = productsToDelete.stream().filter(v -> v.getIsNew() == false).map(ProductViewModel::getId).collect(Collectors.toSet());
+            
+            saveService.setDataToSave(newProductsWithCategories, productsToUpdate, categoriesToUpdate, deletedProducts);
+            
+            saveService.setOnSucceeded(e -> {
+                loadData();
+                productsToDelete.clear();
+                productsToUpdate.clear();
+                categoriesToUpdate.clear();
+                productsTable.refresh();
+                
+                AlertUtils.showSuccess("Operación exitosa", "Cambios guardados con éxito", "Productos nuevos: " + newProductsVm.size()  + "\nProductos actualizados: " + productsToUpdate.size() + "\nProductos eliminados: " + productsToDelete.size());
+            });
+            saveService.setOnFailed(e -> AlertUtils.showError(e.getSource().getException().getMessage()));
+            
+            saveService.start();
         }
     }
     
-    private void loadSuppliers() {
-        try {
-            List<Supplier> suppliers = supplierService.getAll();
-            avaibleSuppliers.setAll(suppliers);
-        } catch (DataAccessException ex) {
-            AlertUtils.showError(ex.getMessage());
-        }
-    }
-    
-    private void loadProducts() {
-       try {
-           List<ProductWithRelations> products = productService.getAllWithRelations();
+    private void loadData() {
+        if (!loadService.isRunning()) {
+            loadService.reset();
+            
+            loadService.setOnSucceeded(e -> {
+                ProductViewData viewData = loadService.getValue();
+            
+                avaibleCategories.addAll(viewData.getCategories());
+                avaibleSuppliers.setAll(viewData.getSuppliers());
+            
+                List<ProductWithRelations> products = viewData.getProducts();
            
-           List<ProductViewModel> viewModels = new ArrayList<>();
-           for (ProductWithRelations dto : products) {
-               UUID supplierId = dto.getProduct().getIdSupplier();
-               Supplier supplier = findSupplierById(supplierId);
+                List<ProductViewModel> viewModels = new ArrayList<>();
+                for (ProductWithRelations dto : products) {
+                    UUID supplierId = dto.getProduct().getIdSupplier();
+                    Supplier supplier = findSupplierById(supplierId);
                
-               ProductViewModel productVm = new ProductViewModel(dto, supplier);
-               viewModels.add(productVm);
-           }
+                    ProductViewModel productVm = new ProductViewModel(dto, supplier);
+                    viewModels.add(productVm);
+                }
            
-           productViewModels.setAll(viewModels);
-           
-       } catch (DataAccessException ex) {
-           AlertUtils.showError(ex.getMessage());
-       }
+                productViewModels.setAll(viewModels);
+                });
+        
+            loadService.setOnFailed(e -> {
+                AlertUtils.showError(e.getSource().getException().getMessage());
+            });
+            
+            loadService.start();
+        }
     }
     
     private Supplier findSupplierById(UUID id) {
@@ -474,14 +441,14 @@ public class ProductController {
     }
     
     private void openCategoriesDialog(ProductViewModel viewModel) {
-        List<Category> result = CheckBoxDialogController.showDialog(
+        Set<Category> result = new HashSet<>(CheckBoxDialogController.showDialog(
                 productsTable.getScene().getWindow(),
                 "Gestionar categorias",
                 "Producto: " + viewModel.nameProperty().getValue(),
                 "Seleccione las categorias que desea agregar a este producto: ",
                 new ArrayList<>(avaibleCategories),
                 new ArrayList<>(viewModel.getCategories())
-        );
+        ));
         
         if (result != null) {
             if (!viewModel.getCategories().equals(result)) {
@@ -491,20 +458,13 @@ public class ProductController {
                     Set<UUID> idsCategories = result.stream().map(Category::getId).collect(Collectors.toSet());
                     categoriesToUpdate.put(viewModel.getId(), idsCategories);
                 
-                    System.out.println("Categorias para actualizar:");
-                
                     productsToUpdate.computeIfAbsent(viewModel.getId(), v -> new HashMap<>())
-                            .put("fecha_actualizacion", Timestamp.from(Instant.now()));
-                    
-                    categoriesToUpdate.forEach((k,v) -> {
-                        System.out.println("Producto: " + k.toString());
-                        v.forEach((val) -> {
-                            System.out.println("    category: " + val.toString());
-                        });
-                    });    
+                            .put("fecha_actualizacion", Timestamp.from(Instant.now()));  
                 }
+            } else {
+                System.out.println("El resultado es el mismo");
             }
-        }        
+        }     
     }
     
     private void handleStringEdit(TableColumn.CellEditEvent<ProductViewModel, String> e) {
@@ -513,28 +473,16 @@ public class ProductController {
             UUID productId = vm.getId();
             String value = e.getNewValue();
             String fieldName = e.getTableColumn().getUserData().toString();
-            
-            if (productViewModels.contains(vm)) {
-                System.out.println("Ya contiene este");
-            } else {
-                System.out.println("Esta bien, no lo contiene");
-            }
         
             if (!vm.getIsNew()) {
                 //ComputeIfAbsent siemrpe devuelve ese mapa asociado a esa id, sea viejo o nuevo
                 productsToUpdate.computeIfAbsent(productId, v -> new HashMap<>()).put(fieldName, value);
                 productsToUpdate.get(productId).put("fecha_actualizacion", Timestamp.from(Instant.now()));
-                productsToUpdate.forEach((key ,v) -> {
-                    System.out.println("Actualizaciones para el producto: " + key.toString());
-                    v.forEach((k, nv) -> System.out.println("Key: " + k + " Value: " + nv));
-                });
             }
         }
     }
     
     private void handleNumberEdit(TableColumn.CellEditEvent<ProductViewModel, Number> e) {
-        System.out.println("Entra en handleNumberEdit");
-        System.out.println("Viejo: " + e.getOldValue() + " Nuevo: " + e.getNewValue());
         if (e.getOldValue() != e.getNewValue()) {
             ProductViewModel vm = e.getRowValue();
             UUID productId = vm.getId();
@@ -544,10 +492,6 @@ public class ProductController {
             if (!vm.getIsNew()) {
                productsToUpdate.computeIfAbsent(productId, v -> new HashMap<>()).put(fieldName, value);
                productsToUpdate.get(productId).put("fecha_actualizacion", Timestamp.from(Instant.now()));
-                productsToUpdate.forEach((key ,v) -> {
-                    System.out.println("Actualizaciones para el producto: " + key.toString());
-                    v.forEach((k, nv) -> System.out.println("Key: " + k + " Value: " + nv));
-                }); 
             }
         }
     }
@@ -564,10 +508,6 @@ public class ProductController {
             if (!vm.getIsNew()) {
                 productsToUpdate.computeIfAbsent(productId, v -> new HashMap<>()).put(fieldName, value.getId());
                 productsToUpdate.get(productId).put("fecha_actualizacion", Timestamp.from(Instant.now()));
-                productsToUpdate.forEach((key ,v) -> {
-                    System.out.println("Actualizaciones para el producto: " + key.toString());
-                    v.forEach((k, nv) -> System.out.println("Key: " + k + " Value: " + nv));
-                });    
             }
         }
     }

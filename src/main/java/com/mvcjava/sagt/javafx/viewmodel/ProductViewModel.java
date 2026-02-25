@@ -177,7 +177,12 @@ public class ProductViewModel {
     }
     
     public void setCategories(Set<Category> categories) {
-        this.categories.addAll(categories);
+        if (categories.isEmpty()) {
+            this.categories.clear();
+        } else {
+            this.categories.addAll(categories);   
+        }
+
     }
     
     private void updateCategoriesDisplay() {
