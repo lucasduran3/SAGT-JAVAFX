@@ -1,0 +1,79 @@
+@import "variables.css";
+@import "base.css";
+
+.mainViewContainer {
+    -fx-background-color: -base-bg-color;
+}
+
+/*SIDEBAR*/
+
+.sidebarContainer {
+    -fx-background-color: -primary-bg-color;
+    -fx-pref-width: 270px; 
+    -fx-min-width: 200px; 
+    -fx-max-width: 300px;
+    -fx-padding: 20;
+    -fx-spacing: 40;
+    -fx-effect: -soft-shadow-sm;
+}
+
+.sidebarLogo {
+    -fx-text-fill: -primary-bg-color;
+    -fx-background-radius: 7px;
+    -fx-background-color: linear-gradient(to bottom, #1976D2, #0D47A1);
+}
+
+.sidebarLinksContainer {
+    -fx-spacing: 15;
+}
+
+.sidebarLinksContainer .title {
+    -fx-text-fill: -text-muted;
+}
+
+.sidebarContainer .menu-button {
+    -fx-background-color: transparent;
+    -fx-alignment: CENTER_LEFT;
+    -fx-background-insets: 0;
+    -fx-pref-width: infinity;
+    -fx-background-radius: 7px;
+    -fx-padding: 8 10;
+    -fx-text-fill: -text-muted;
+    -fx-font-weight: 600;
+}
+
+.sidebarContainer .menu-button:hover {
+    -fx-background-color: -primary-light;
+    -fx-text-fill: -secondary-bg-color;
+    -fx-cursor: hand;
+}
+
+.sidebarContainer .menu-button:selected {
+    -fx-background-color: -primary-light;
+    -fx-text-fill: -secondary-bg-color;
+    -fx-border-color: -secondary-bg-color;
+    -fx-border-width: 0 0 0 5;
+}
+
+/*MAIN CONTENT*/
+
+.topHeader {
+    -fx-padding: 20 25 20 25;
+}
+
+.pageTitle {
+    -fx-font-size: 18px;
+}
+
+.searchInput {
+    -fx-padding: 8 12;
+    -fx-background-color: -primary-bg-color;
+    -fx-border-width: 1px;
+    -fx-border-color: -primary-light;
+    -fx-border-radius: 4px;
+    -fx-background-radius: 4px;
+}
+
+.searchInput:focused {
+    -fx-border-color: -border-primary-color;
+}

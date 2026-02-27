@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ToggleGroup?>
+<?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.control.MenuButton?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.geometry.Insets?>
+<?import java.net.URL?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            styleClass="mainViewContainer">
+    <stylesheets>
+        <URL value="@styles/mainView.css" />
+    </stylesheets>
+    
+    <left>
+        <VBox styleClass="sidebarContainer">
+            <Label text="SGAT" styleClass="sidebarLogo, primaryTitle" ></Label>
+        
+            <VBox styleClass="sidebarLinksContainer">
+                <fx:define>
+                    <ToggleGroup fx:id="menuGroup"/>
+                </fx:define>
+    
+                <ToggleButton text="Dashboard" toggleGroup="$menuGroup" styleClass="menu-button" selected="true" />
+                <ToggleButton text="Productos" toggleGroup="$menuGroup" styleClass="menu-button" />
+                <ToggleButton text="Ventas" toggleGroup="$menuGroup" styleClass="menu-button" />
+                <ToggleButton text="Clientes" toggleGroup="$menuGroup" styleClass="menu-button" />
+                <ToggleButton text="Proveedores" toggleGroup="$menuGroup" styleClass="menu-button" />
+                <ToggleButton text="Categorias" toggleGroup="$menuGroup" styleClass="menu-button" />
+                <ToggleButton text="Ubicaciones" toggleGroup="$menuGroup" styleClass="menu-button" />
+                <ToggleButton text="Reportes" toggleGroup="$menuGroup" styleClass="menu-button" />
+            </VBox>
+        </VBox>
+    </left>
+    <center>
+        <BorderPane styleClass="contentWrapper">
+            
+            <top>
+                <BorderPane styleClass="topHeader">
+                    <left>
+                        <Label fx:id="pageTitleLabel" text="Productos" styleClass="pageTitle, primaryTitle"/>
+                    </left>
+                    
+                    <right>
+                        <MenuButton text="Mi Perfil" styleClass="userMenu, ghostBtn">
+                            <items>
+                                <MenuItem text="Ver perfil" />
+                                <MenuItem text="Logout" />
+                            </items>
+                        </MenuButton>
+                    </right>
+                </BorderPane>
+            </top>
+
+            <center>
+                <StackPane fx:id="dynamicContentContainer">
+                    <padding>
+                        <Insets top="20" right="25" bottom="20" left="25"/>
+                    </padding>
+                    
+                </StackPane>
+            </center>
+            
+        </BorderPane>
+    </center>
+    
+</BorderPane>

@@ -1,0 +1,150 @@
+@import "variables.css";
+
+/*Asegura que los elementos respeten el color de texto global*/
+.label, .button, .text-field, .text-area, .check-box, .radio-button, .hyperlink, .menu-button, .menu-item, .table-column {
+    -fx-text-fill: -base-text-color;
+}
+
+.primaryTitle {
+    -fx-padding: 6 10;
+    -fx-font-weight: bold;
+    -fx-font-size: 16px;    
+}
+
+/*Estilos generales para todos los botones*/
+.ghostBtn, .btnPrimary, .btnDanger, .btnSuccess, .btnWarning, .btnSecondary {
+    -fx-padding: 8 12;
+    -fx-background-insets: 0;
+    -fx-background-radius: 7px;
+    -fx-border-radius: 7px;
+    -fx-font-weight: 600; /* Añadimos negrita sutil para que el texto resalte mejor */
+    -fx-cursor: hand;
+}
+
+/* =========================================
+   GHOST BTN (Intacto según tu petición)
+   ========================================= */
+.ghostBtn {
+    -fx-background-color: -primary-bg-color;
+}
+.ghostBtn:hover{
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.15), 10, 0, 0px, 5px);
+}
+
+.btnPrimary {
+    -fx-background-color: -secondary-bg-color;
+    -fx-border-color: -secondary-bg-color;
+    -fx-border-width: 1px;
+    -fx-text-fill: white;
+}
+
+.btnPrimary:hover {
+    -fx-background-color: #1976D2;
+    -fx-border-color: #1976D2;
+}
+
+.btnPrimary:pressed {
+    -fx-background-color: -primary-dark; /* Un azul aún más profundo al hacer clic */
+}
+
+.btnDanger {
+    -fx-background-color: transparent;
+    -fx-border-color: -primary-danger;
+    -fx-border-width: 1px;
+    -fx-text-fill: -primary-danger;
+}
+
+.btnDanger:hover {
+    -fx-background-color: -primary-danger;
+    -fx-text-fill: white;
+}
+
+.btnDanger:pressed {
+    -fx-background-color: -danger-dark;
+    -fx-border-color: -danger-dark;
+}
+
+.btnWarning {
+    -fx-background-color: transparent;
+    -fx-border-color: -primary-warning;
+    -fx-border-width: 1px;
+    -fx-text-fill: -warning-dark; /* Usamos el dark para que lea bien sobre fondo claro */
+}
+
+.btnWarning:hover {
+    -fx-background-color: -primary-warning;
+    -fx-text-fill: white;
+}
+
+.btnWarning:pressed {
+    -fx-background-color: -warning-dark;
+    -fx-border-color: -warning-dark;
+}
+
+.btnSuccess {
+    -fx-background-color: transparent;
+    -fx-border-color: -primary-success;
+    -fx-border-width: 1px;
+    -fx-text-fill: -primary-success;
+}
+
+.btnSuccess:hover {
+    -fx-background-color: -primary-success;
+    -fx-text-fill: white;
+}
+
+.btnSuccess:pressed {
+    -fx-background-color: -success-dark;
+    -fx-border-color: -success-dark;
+}
+
+.btnSecondary {
+    -fx-background-color: transparent;
+    -fx-border-color: -secondary-bg-color;
+    -fx-border-width: 1px;
+    -fx-text-fill: -secondary-bg-color;    
+}
+
+.btnSecondary:hover {
+    -fx-background-color: -secondary-bg-color;
+    -fx-text-fill: white;
+}
+
+.btnSecondary:pressed {
+    -fx-background-color: -primary-dark;
+    -fx-border-color: -primary-dark;
+}
+
+.menu-button .context-menu {
+    -fx-background-color: -primary-bg-color;
+    -fx-background-radius: 8px;
+    -fx-border-width: 0;
+    -fx-padding: 10px 5px 5px 5px;
+    -fx-border-insets: 5px 0 0 0; 
+    -fx-background-insets: 5px 0 0 0;
+    -fx-effect: -soft-shadow-sm;
+}
+
+.menu-button .context-menu .container {
+    -fx-background-color: transparent;
+}
+
+.menu-button .menu-item {
+    -fx-padding: 8 15 8 15;
+    -fx-background-radius: 4px;
+}
+
+.menu-button .menu-item .label {
+    -fx-text-fill: -text-muted;
+}
+
+.menu-button .menu-item:focused {
+    -fx-cursor: hand;
+    -fx-background-color: -primary-light;
+}
+
+.menu-button .menu-item:focused .label {
+    -fx-text-fill: -secondary-bg-color;
+}
+
+

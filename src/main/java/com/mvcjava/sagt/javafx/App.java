@@ -21,11 +21,12 @@ public class App extends Application {
         /*scene = new Scene(loadFXML("primary"), 640, 480);
         stage.setScene(scene);
         stage.show();*/
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/mvcjava/sagt/javafx/view/productsView.fxml"));
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/mvcjava/sagt/javafx/view/mainView.fxml"));
         
         
         Scene scene = new Scene(loader.load());
         
+        //stage.setMaximized(true);
         stage.setTitle("mi app");
         stage.setScene(scene);
         stage.show();

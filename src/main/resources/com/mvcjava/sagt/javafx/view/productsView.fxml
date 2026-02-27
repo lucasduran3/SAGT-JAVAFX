@@ -1,34 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.Region?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.layout.VBox?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.geometry.Insets?>
+<?import java.net.URL?>
 
-<BorderPane xmlns="http://javafx.com/javafx"
+<VBox xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
-            fx:controller="com.mvcjava.sagt.javafx.controller.ProductController">
+            fx:controller="com.mvcjava.sagt.javafx.controller.ProductController"
+            spacing="15">
     
-    <center>
-        <!-- La tabla donde se mostrarán los productos -->
-        <TableView fx:id="productsTable">
-            <!-- Las columnas se configuran en Java, no aquí -->
-        </TableView>
-    </center>
+    <stylesheets>
+        <URL value="@styles/mainView.css" />
+    </stylesheets>
     
-    <bottom>
-        <HBox spacing="10" alignment="CENTER">
-            <padding>
-                <Insets top="10" bottom="10" left="10" right="10"/>
-            </padding>
-            
-            <!-- Botones para futuras funcionalidades -->
-            <Button text="Nuevo Producto" onAction="#handleAddProduct"/>
-            <Button text="Eliminar Seleccionado" onAction="#handleDeleteProduct"/>
-            <Button text="Refrescar" onAction="#refresh"/>
-            <Button text="Guardar cambios" onAction="#handleSaveChanges"/>
-        </HBox>
-    </bottom>
-    
-</BorderPane>
+    <HBox spacing="10" alignment="CENTER_LEFT">
+        <TextField promptText="Buscar ...." prefWidth="250" styleClass="searchInput"/>
+        <Region HBox.hgrow="ALWAYS" />
+                            
+            <Button text="Agregar producto" styleClass="btnPrimary" onAction="#handleAddProduct"/>
+            <Button text="Eliminar" styleClass="btnDanger" onAction="#handleDeleteProduct"/>
+            <Button text="Guardar cambios" styleClass="btnSuccess" onAction="#handleSaveChanges"/>
+            <Button text="Recargar" styleClass="btnWarning"/>
+            <Button text="Filtrar" styleClass="ghostBtn"/>
+    </HBox>
+
+    <TableView fx:id="productsTable" VBox.vgrow="ALWAYS">
+        <columns>
+        </columns>
+    </TableView>
+</VBox>

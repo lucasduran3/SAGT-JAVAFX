@@ -1,0 +1,28 @@
+.root {
+    -base-bg-color: #E9ECEF;
+    -primary-bg-color: #F8F9FA;
+    -secondary-bg-color: #1E88E5;
+    
+    -primary-light: #E3F2FD;
+    -primary-dark: #1565C0;
+    -primary-danger: #E63946;
+    -danger-dark: #C1121F;
+    -primary-warning: #F59E0B;
+    -warning-dark: #D97706;
+    -primary-success: #2A9D8F;
+    -success-dark: #264653;
+    
+    -border-primary-color: #BBDEFB;
+    
+    -base-text-color: #2d3436;
+    -text-muted: #535e42;
+    -text-muted-light: #a0a0a0;
+    -primary-text: #2d3436;
+    
+    -fx-font-size: 14px;
+    -fx-font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+    
+    -soft-shadow-sm: dropshadow(three-pass-box, rgba(0, 0, 0, 0.2), 10, 0, 0, 0);
+    
+    -fx-text-fill: -base-text-color;
+}
