@@ -19,6 +19,7 @@
 
 <BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.mvcjava.sagt.javafx.controller.MainController"
             styleClass="mainViewContainer">
     <stylesheets>
         <URL value="@styles/mainView.css" />
