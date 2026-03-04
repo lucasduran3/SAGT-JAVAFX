@@ -40,7 +40,7 @@ public class SupplierDAOImpl implements SupplierDAO{
             stmt.setString(1, supplier.getName());
             stmt.setString(2, supplier.getPhone());
             stmt.setString(3, supplier.getEmail());
-            stmt.setString(4, supplier.getDirection());
+            stmt.setString(4, supplier.getAddress());
             stmt.setString(5, supplier.getWeb());
             stmt.setString(6, supplier.getLocation());
             stmt.setString(7, supplier.getProvince());
@@ -163,7 +163,7 @@ public class SupplierDAOImpl implements SupplierDAO{
         supplier.setPhone(rs.getString("telefono"));
         supplier.setEmail(rs.getString("email"));
         supplier.setWeb(rs.getString("web"));
-        supplier.setDirection(rs.getString("direccion"));
+        supplier.setAddress(rs.getString("direccion"));
         supplier.setLocation(rs.getString("localidad"));
         supplier.setProvince(rs.getString("provincia"));
         

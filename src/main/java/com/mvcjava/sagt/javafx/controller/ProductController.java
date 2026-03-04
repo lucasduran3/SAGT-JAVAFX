@@ -475,7 +475,7 @@ public class ProductController {
             String fieldName = e.getTableColumn().getUserData().toString();
         
             if (!vm.getIsNew()) {
-                //ComputeIfAbsent siemrpe devuelve ese mapa asociado a esa id, sea viejo o nuevo
+                //ComputeIfAbsent siempre devuelve ese mapa asociado a la id, sea viejo o nuevo
                 productsToUpdate.computeIfAbsent(productId, v -> new HashMap<>()).put(fieldName, value);
                 productsToUpdate.get(productId).put("fecha_actualizacion", Timestamp.from(Instant.now()));
             }

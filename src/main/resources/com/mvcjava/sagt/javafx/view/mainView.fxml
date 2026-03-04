@@ -40,7 +40,6 @@
                 <ToggleButton text="Clientes" toggleGroup="$menuGroup" styleClass="menu-button" />
                 <ToggleButton text="Proveedores" toggleGroup="$menuGroup" styleClass="menu-button" />
                 <ToggleButton text="Categorias" toggleGroup="$menuGroup" styleClass="menu-button" />
-                <ToggleButton text="Ubicaciones" toggleGroup="$menuGroup" styleClass="menu-button" />
                 <ToggleButton text="Reportes" toggleGroup="$menuGroup" styleClass="menu-button" />
             </VBox>
         </VBox>

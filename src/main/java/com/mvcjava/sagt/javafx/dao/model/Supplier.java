@@ -16,16 +16,12 @@ public class Supplier {
     private String name;
     private String phone;
     private String email;
-    private String direction;
+    private String address;
     private String web;
     private String location;
     private String province;
     
-    private BasicStringValidator stringValidator;
-    
-    public Supplier() {
-        this.stringValidator = new BasicStringValidator();
-    }
+    public Supplier() {}
     
     //SETTERS
     public void setId(UUID id) {
@@ -36,37 +32,37 @@ public class Supplier {
     }
 
     public void setName(String name) {
-        stringValidator.validate(name, 3, 30, "nombre");
+        BasicStringValidator.validate(name, 3, 30, "nombre");
         this.name = name.trim().toLowerCase();
     }
     
     public void setPhone(String phone) {
-        stringValidator.validate(phone, 8, 20, "telefono");
+        BasicStringValidator.validate(phone, 8, 20, "telefono");
         this.phone = phone;
     }
     
     public void setEmail(String email) {
-        stringValidator.validate(email, 4, 255, "email");
+        BasicStringValidator.validate(email, 4, 255, "email");
         this.email = email.trim().toLowerCase();
     }
     
-    public void setDirection(String direction) {
-        stringValidator.validate(direction, 3, 100, "direccion");
-        this.direction = direction.trim().toLowerCase();
+    public void setAddress(String direction) {
+        BasicStringValidator.validate(direction, 3, 100, "direccion");
+        this.address = direction.trim().toLowerCase();
     }
     
     public void setWeb(String web) {
-        stringValidator.validate(web, 4, 255, "web");
+        BasicStringValidator.validate(web, 4, 255, "web");
         this.web = web.trim().toLowerCase();
     }
     
     public void setLocation(String location) {
-        stringValidator.validate(direction, 3, 50, "localidad");
+        BasicStringValidator.validate(location, 3, 50, "localidad");
         this.location = location.trim().toLowerCase();
     }
     
     public void setProvince(String province) {
-        stringValidator.validate(province, 3, 50, "provincia");
+        BasicStringValidator.validate(province, 3, 50, "provincia");
         this.province = province.trim().toLowerCase();
     }
     
@@ -87,8 +83,8 @@ public class Supplier {
         return this.email;
     }
     
-    public String getDirection() {
-        return this.direction;
+    public String getAddress() {
+        return this.address;
     }
     
     public String getWeb() {

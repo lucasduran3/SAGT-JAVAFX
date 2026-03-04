@@ -29,17 +29,12 @@ public class Product {
     private Timestamp entryDate;
     private Timestamp updateDate;
     
-    private final BasicStringValidator stringValidator;
-    
-    public Product() {
-        stringValidator = new BasicStringValidator();
-    }
+    public Product() {}
     
     public Product(UUID id, String name, String brand, String model, float purchasePrice, 
                     float salePrice, int stock, int minStock, UUID idSupplier, 
                     UUID loadedBy, Timestamp entryDate, Timestamp updateDate) {
-        
-        stringValidator = new BasicStringValidator();        
+           
         this.setId(id);
         this.setName(name);
         this.setBrand(brand);
@@ -57,7 +52,6 @@ public class Product {
     public Product(UUID id, String name, String brand, String model, float purchasePrice, 
                     float salePrice, int stock, int minStock, UUID idSupplier, UUID loadedBy ) {
         
-        stringValidator = new BasicStringValidator();
         this.setId(id);
         this.setName(name);
         this.setBrand(brand);
@@ -75,7 +69,6 @@ public class Product {
     public Product(String name, String brand, String model, float purchasePrice, 
                     float salePrice, int stock, int minStock, UUID idSupplier, UUID loadedBy ) {
         
-        stringValidator = new BasicStringValidator();
         this.setId(null);
         this.setName(name);
         this.setBrand(brand);
@@ -99,17 +92,17 @@ public class Product {
     }
     
     public void setName(String name) {
-        stringValidator.validate(name, 3, 100, "nombre");
+        BasicStringValidator.validate(name, 3, 100, "nombre");
         this.name = name.trim().toLowerCase(); 
     }
     
     public void setBrand(String brand) {
-        stringValidator.validate(brand, 1, 100, "marca");
+        BasicStringValidator.validate(brand, 1, 100, "marca");
         this.brand = brand.trim().toLowerCase();
     }
     
     public void setModel(String model) {
-        stringValidator.validate(model, 1, 100, "modelo");
+        BasicStringValidator.validate(model, 1, 100, "modelo");
         this.model = model.trim().toLowerCase();
     }
     
