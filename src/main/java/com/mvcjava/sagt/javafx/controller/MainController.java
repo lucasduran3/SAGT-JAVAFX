@@ -37,6 +37,7 @@ public class MainController {
     private void initializeRoutes() {
         routes = new HashMap<>();
         routes.put("productos", "/com/mvcjava/sagt/javafx/view/productsView.fxml");
+        routes.put("clientes", "/com/mvcjava/sagt/javafx/view/clientsView.fxml");
     }
     
     private void setupSideMenuListener() {
@@ -51,6 +52,7 @@ public class MainController {
                 try {
                     loadView(route);
                 } catch (IOException ex) {
+                    ex.printStackTrace();
                     AlertUtils.showError("Error al cargar vista " + routeKey);
                     menuGroup.selectToggle(oldToggle);
                 }

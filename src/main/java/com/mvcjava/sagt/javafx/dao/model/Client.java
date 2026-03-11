@@ -7,6 +7,7 @@ package com.mvcjava.sagt.javafx.dao.model;
 import com.mvcjava.sagt.javafx.enums.ClientType;
 import com.mvcjava.sagt.javafx.util.BasicStringValidator;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.UUID;
 
 /**
@@ -27,6 +28,18 @@ public class Client {
     
     public Client() {}
     
+    public Client(UUID id, String cuit_cuil, String companyName, ClientType clientType, String phone, String email, String location, String province, String address) {
+        setId(id);
+        setCuitCuil(cuit_cuil);
+        setCompanyName(companyName);
+        setClientType(clientType);
+        setPhone(phone);
+        setEmail(email);
+        setLocation(location);
+        setProvince(province);
+        setAddress(address);
+        setEntryDate(Timestamp.from(Instant.now()));
+    }
     
     /**
      * 
@@ -42,11 +55,13 @@ public class Client {
     }
     
     public void setCuitCuil(String cuit_cuil) {
+        cuit_cuil = cuit_cuil.trim().toLowerCase();
         BasicStringValidator.validate(cuit_cuil, 11, 11, "cuit/cuil");
         this.cuit_cuil = cuit_cuil;
     }
     
     public void setCompanyName(String companyName) {
+        companyName = companyName.trim().toLowerCase();
         BasicStringValidator.validate(companyName, 1, 100, "razon social");
         this.companyName = companyName;
     }
@@ -60,26 +75,31 @@ public class Client {
     }
     
     public void setPhone(String phone) {
+        phone = phone.trim().toLowerCase();
         BasicStringValidator.validate(phone, 8, 20, "telefono");
         this.phone = phone;
     }
     
     public void setEmail(String email) {
+        email = email.trim().toLowerCase();
         BasicStringValidator.validate(email, 4, 255, "email");
-        this.email = email.toLowerCase();
+        this.email = email;
     }
     
     public void setAddress(String address) {
+        address = address.trim().toLowerCase();
         BasicStringValidator.validate(address, 3, 100, "direccion");
         this.address = address.toLowerCase();        
     }
     
     public void setLocation(String location) {
+        location = location.trim().toLowerCase();
         BasicStringValidator.validate(location, 3, 50, "localidad");
         this.location = location.toLowerCase();        
     }
     
     public void setProvince(String province) {
+        province = province.trim().toLowerCase();
         BasicStringValidator.validate(province, 3, 50, "provincia");
         this.province = province.toLowerCase();            
     }

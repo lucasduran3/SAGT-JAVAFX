@@ -65,7 +65,7 @@ public class BasicStringValidator {
     }
     
     public static boolean isValidEmail(String email) {
-        Pattern emailPattern = Pattern.compile("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\\\.[A-Z]{2,6}$");
+        Pattern emailPattern = Pattern.compile("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
         return emailPattern.matcher(email).matches();
     }
 }

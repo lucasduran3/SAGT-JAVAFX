@@ -37,7 +37,13 @@ public class ClientServiceImpl implements ClientService {
 
     @Override
     public void createClient(Client client) throws BusinessException {
-        if (!BasicStringValidator.isValidCuit(client.getCuitCuil())) {
+        String cuit = client.getCuitCuil();
+        boolean exists = dao.alreadyExists(client.getId(), cuit);
+        if (exists) {
+            throw new BusinessException("El cliente con el cuit/cuil: " + cuit + " ya existe");
+        }
+        
+        if (!BasicStringValidator.isValidCuit(cuit)) {
             throw new BusinessException("Número de cuit/cuil inválido.");
         }
         if (!BasicStringValidator.isValidPhone(client.getPhone())) {
@@ -56,10 +62,17 @@ public class ClientServiceImpl implements ClientService {
         if (currentClient == null) {
             throw new BusinessException("El cliente que quiere actualizar no existe.");
         }
+        
         if (updates.containsKey("cuit_cuil")) {
             if (!BasicStringValidator.isValidCuit(updates.get("cuit_cuil").toString())) {
                 throw new BusinessException("Número de cuit/cuil inválido.");
-            }        
+            } else {
+                String cuit = (String) updates.get("cuit_cuil");
+                boolean exists = dao.alreadyExists(id, cuit);
+                if (exists) {
+                    throw new BusinessException("Ya existe otro cliente con el mismo cuit/cuil.");
+                }
+            }
         }
         if (updates.containsKey("telefono")) {
             if (!BasicStringValidator.isValidPhone(updates.get("telefono").toString())) {
@@ -83,5 +96,20 @@ public class ClientServiceImpl implements ClientService {
         }
         
         dao.deleteClient(id);
+    }
+
+    @Override
+    public void saveChanges(Set<Client> newClients, Map<UUID, Map<String, Object>> clientsToUpdate, Set<Client> clientsToDelete) throws BusinessException {
+        for (Map.Entry<UUID, Map<String, Object>> entry : clientsToUpdate.entrySet()) {
+            updateClient(entry.getKey(), entry.getValue());
+        }
+        
+        for (Client newClient : newClients) {
+            createClient(newClient);
+        }
+        
+        for (Client client: clientsToDelete) {
+            deleteClient(client.getId());
+        }
     }
 }

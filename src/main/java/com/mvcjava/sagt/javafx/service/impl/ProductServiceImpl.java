@@ -93,9 +93,7 @@ public class ProductServiceImpl implements ProductService {
         
         if (dataChanged) {
             boolean exists = productDAO.alreadyExist(id, newName, newModel, newBrand); 
-            System.out.println("Checkeando si existe; " + exists);
             if (exists) {
-                System.out.println("El prod ya existe");
                 throw new BusinessException("Ya existe otro producto con el mismo nombre, marca y modelo.");
             }
         }

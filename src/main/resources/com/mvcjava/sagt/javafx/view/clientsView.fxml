@@ -23,9 +23,9 @@
         <TextField promptText="Buscar ...." prefWidth="250" styleClass="searchInput"/>
         <Region HBox.hgrow="ALWAYS" />
                             
-        <Button text="Agregar producto" styleClass="btnPrimary"/>
-        <Button text="Eliminar" styleClass="btnDanger"/>
-        <Button text="Guardar cambios" styleClass="btnSuccess"/>
+        <Button text="Agregar Cliente" styleClass="btnPrimary" onAction="#handleAddClient"/>
+        <Button text="Eliminar" styleClass="btnDanger" onAction="#handleDeleteClient"/>
+        <Button text="Guardar cambios" styleClass="btnSuccess" onAction="#handleSaveChanges"/>
         <Button text="Recargar" styleClass="btnWarning"/>
         <Button text="Filtrar" styleClass="ghostBtn"/>
     </HBox>

@@ -20,4 +20,5 @@ public interface ClientService {
     void createClient(Client client) throws BusinessException;
     void updateClient(UUID id, Map<String, Object> updates) throws BusinessException;
     void deleteClient(UUID id) throws BusinessException;
+    void saveChanges(Set<Client> newClients, Map<UUID, Map<String, Object>> clientsToUpdate, Set<Client> clientsToDelete) throws BusinessException;
 }

@@ -32,6 +32,8 @@ public class ClientViewModel {
     private final StringProperty province;
     private final ObjectProperty<Timestamp> entryDate;
     private final BooleanProperty selected;
+    
+    private boolean isNew;
 
     public ClientViewModel(Client client) {
         this.client = client;
@@ -46,6 +48,8 @@ public class ClientViewModel {
         this.province = new SimpleStringProperty(client.getProvince());
         this.entryDate = new SimpleObjectProperty<>(client.getEntryDate());
         this.selected = new SimpleBooleanProperty(false);
+        
+        this.isNew = false;
 
         setupSync();
     }
@@ -129,5 +133,13 @@ public class ClientViewModel {
     @Override
     public int hashCode() {
         return Objects.hash(client);
+    }
+    
+    public void setIsNew(boolean value) {
+        this.isNew = value;
+    }
+    
+    public boolean getIsNew() {
+        return this.isNew;
     }
 }

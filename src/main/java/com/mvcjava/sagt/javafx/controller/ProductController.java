@@ -384,12 +384,11 @@ public class ProductController {
             
             saveService.setOnSucceeded(e -> {
                 loadData();
+                AlertUtils.showSuccess("Operación exitosa", "Cambios guardados con éxito", "Productos nuevos: " + newProductsVm.size()  + "\nProductos actualizados: " + productsToUpdate.size() + "\nProductos eliminados: " + productsToDelete.size());
                 productsToDelete.clear();
                 productsToUpdate.clear();
                 categoriesToUpdate.clear();
-                productsTable.refresh();
-                
-                AlertUtils.showSuccess("Operación exitosa", "Cambios guardados con éxito", "Productos nuevos: " + newProductsVm.size()  + "\nProductos actualizados: " + productsToUpdate.size() + "\nProductos eliminados: " + productsToDelete.size());
+                productsTable.refresh();                
             });
             saveService.setOnFailed(e -> AlertUtils.showError(e.getSource().getException().getMessage()));
             

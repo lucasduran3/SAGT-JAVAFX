@@ -73,23 +73,24 @@ public class ClientDAOImpl implements ClientDAO{
                         "telefono, " +
                         "email, " +
                         "direccion, " +
-                        "loacalidad, " +
+                        "localidad, " +
                         "provincia, " +
                         "fecha_alta" +
                      ") " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ? ,?)";
+                     "VALUES (?, ?, ?::public.e_tipo_cliente, ?, ?, ?, ?, ? ,?)";
         try (Connection conn = DatabaseManager.getConnection();
                 PreparedStatement stmt = conn.prepareStatement(sql)) 
         {
             stmt.setString(1, client.getCuitCuil());
             stmt.setString(2, client.getCompanyName());
-            stmt.setString(3, client.getClientType().name());
+            stmt.setString(3, client.getClientType().name().toLowerCase());
             stmt.setString(4, client.getPhone());
             stmt.setString(5, client.getEmail());
             stmt.setString(6, client.getAddress());
             stmt.setString(7, client.getLocation());
             stmt.setString(8, client.getProvince());
             stmt.setTimestamp(9, client.getEntryDate());
+            stmt.executeUpdate();
         } catch (SQLException ex) {
             throw new DataAccessException("Error al añadir cliente: " + client.getCuitCuil(), ex);
         }
@@ -139,7 +140,19 @@ public class ClientDAOImpl implements ClientDAO{
 
     @Override
     public boolean alreadyExists(UUID id, String cuit_cuil) {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        String sql = "SELECT 1 FROM app.clientes WHERE cuit_cuil = ? AND id <> ? LIMIT 1";
+        
+        try (Connection conn = DatabaseManager.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, cuit_cuil);
+            stmt.setObject(2, id);
+            
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException ex) {
+            throw new DataAccessException("Error al verificar existencia de cliente: " + id + " " + cuit_cuil, ex);
+        }
     }
     
     private Client mapResultSetToClient(ResultSet rs) throws SQLException{

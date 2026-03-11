@@ -4,10 +4,10 @@
  */
 package com.mvcjava.sagt.javafx.controller;
 
+import com.mvcjava.sagt.javafx.async.ClientLoadService;
+import com.mvcjava.sagt.javafx.async.ClientSaveService;
 import com.mvcjava.sagt.javafx.dao.model.Client;
 import com.mvcjava.sagt.javafx.enums.ClientType;
-import com.mvcjava.sagt.javafx.service.impl.ClientServiceImpl;
-import com.mvcjava.sagt.javafx.service.interfaces.ClientService;
 import com.mvcjava.sagt.javafx.util.AlertUtils;
 import com.mvcjava.sagt.javafx.util.BasicStringValidator;
 import com.mvcjava.sagt.javafx.viewmodel.ClientViewModel;
@@ -15,6 +15,8 @@ import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -22,6 +24,7 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.CheckBoxTableCell;
@@ -33,7 +36,6 @@ import javafx.scene.control.cell.TextFieldTableCell;
  * @author lucas
  */
 public class ClientController {
-    private ClientService clientService;
 
     @FXML
     private TableView<ClientViewModel> clientsTable;
@@ -54,6 +56,9 @@ public class ClientController {
 
     private Map<UUID, Map<String, Object>> clientsToUpdate;
     private Set<ClientViewModel> clientsToDelete;
+    
+    private ClientLoadService loadService;
+    private ClientSaveService saveService;
 
     public ClientController() {}
 
@@ -72,7 +77,8 @@ public class ClientController {
     }
 
     private void initializeDependencies() {
-        this.clientService = new ClientServiceImpl();
+        this.loadService = new ClientLoadService();
+        this.saveService = new ClientSaveService();
     }
 
     private void setupTableColumns() {
@@ -191,15 +197,97 @@ public class ClientController {
     }
 
     private void loadData() {
-        Set<Client> clients = clientService.getAll();
-        clientViewModels.setAll(
-                clients.stream()
-                        .map(ClientViewModel::new)
-                        .collect(Collectors.toList())
-        );
+        if (!loadService.isRunning()) {
+            loadService.reset();
+            
+            loadService.setOnSucceeded(e -> {
+                Set<Client> clients = loadService.getValue();
+                clientViewModels.setAll(clients.stream().map(ClientViewModel::new).collect(Collectors.toList()));
+            });
+            
+            loadService.setOnFailed(e -> {
+                AlertUtils.showError(e.getSource().getException().getMessage());
+            });
+            
+            loadService.start();
+        }
+    }
+    
+    private void saveData() {
+        if (!saveService.isRunning()) {
+            saveService.reset();
+            
+            Set<Client> newClients = clientViewModels.stream().filter(ClientViewModel::getIsNew).map(ClientViewModel::getModel).collect(Collectors.toSet());
+            System.out.println(newClients.size());
+            Set<Client> deleted = clientsToDelete.stream().map(ClientViewModel::getModel).collect(Collectors.toSet());
+            
+            saveService.setData(newClients, clientsToUpdate, deleted);
+            
+            saveService.setOnSucceeded(e -> {
+                loadData();
+                AlertUtils.showSuccess("Operación exitosa", "Cambios guardados con éxito", "Productos nuevos: " + newClients.size()  + "\nProductos actualizados: " + clientsToUpdate.size() + "\nProductos eliminados: " + clientsToDelete.size());
+                clientsToDelete.clear();
+                clientsToUpdate.clear();
+                clientsTable.refresh();                
+            });
+            
+            saveService.setOnFailed(e -> {
+                AlertUtils.showError(e.getSource().getException().getMessage());
+            });
+            
+            saveService.start();
+        }
     }
 
     private String normalize(String value) {
         return value == null ? "" : value.trim();
+    }
+    
+    @FXML
+    protected void handleAddClient() {
+        ClientViewModel newClient = ClientFormController.showClientForm();
+        
+        if (newClient != null) {
+            newClient.setIsNew(true);
+            
+            boolean existingCuit = clientViewModels.stream()
+                .anyMatch(c -> Objects.equals(newClient.cuitCuilProperty().get(), c.cuitCuilProperty().get()));
+            
+            if (existingCuit) {
+                AlertUtils.showError("Ya existe otro cliente con el mismo cuit/cuil");
+            } else {
+                clientViewModels.add(newClient);
+            }
+        }
+    }
+    
+    @FXML
+    protected void handleDeleteClient() {
+        Optional<ButtonType> btn = AlertUtils
+                .showConfirmAlert("Eliminar clientes", "Desea eliminar los clientes seleccionados?"
+                + "\nLos clientes recien agregados no se podrán recuperar.");
+        
+        btn.ifPresent(p -> {
+            if (p == ButtonType.OK) {
+                Set<ClientViewModel> selected = clientViewModels.stream().filter(c -> c.isSelected()).collect(Collectors.toSet());
+                
+                for (ClientViewModel vm : selected) {
+                    clientsToDelete.add(vm);
+                    clientViewModels.remove(vm);
+                }
+            }
+        });
+    }
+    
+    @FXML
+    protected void handleSaveChanges() {
+        Optional<ButtonType> btn = AlertUtils
+                .showConfirmAlert("Guardar cambios", "Desea guardar los cambios en la base de datos?");
+        
+        btn.ifPresent(p -> {
+            if (p == ButtonType.OK) {
+                saveData();
+            }
+        });        
     }
 }
