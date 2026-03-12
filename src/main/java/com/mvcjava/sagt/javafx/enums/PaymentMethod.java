@@ -12,5 +12,17 @@ public enum PaymentMethod {
     EFECTIVO,
     TRANSFERENCIA, 
     DEBITO,
-    CREDITO
+    CREDITO;
+    
+    public static PaymentMethod fromString(String text) {
+        if (text == null || text.isBlank()) {
+            return EFECTIVO;
+        }
+        
+        try {
+            return PaymentMethod.valueOf(text.trim().toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException("El valor en la DB no coincide con el Enum en Java.");
+        }
+    }
 }

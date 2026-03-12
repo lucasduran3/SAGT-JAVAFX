@@ -74,7 +74,7 @@ public class SaleHeader {
         this.paymentMethod = paymentMethod;
     }
     
-    public void loadedBy(UUID id) {
+    public void setLoadedBy(UUID id) {
         this.loadedBy = id;
     }
     

@@ -23,7 +23,7 @@
     <HBox spacing="10" alignment="CENTER_LEFT">
         <TextField promptText="Buscar venta..." prefWidth="250" styleClass="searchInput"/>
         <Region HBox.hgrow="ALWAYS"/>
-        <Button text="Recargar" styleClass="btnWarning" onAction="#handleRecargar"/>
+        <Button text="Recargar" styleClass="btnWarning" onAction="#handleReload"/>
     </HBox>
 
     <SplitPane orientation="VERTICAL" VBox.vgrow="ALWAYS" dividerPositions="0.5">
