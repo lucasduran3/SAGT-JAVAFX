@@ -6,22 +6,33 @@ package com.mvcjava.sagt.javafx.controller;
 
 import com.mvcjava.sagt.javafx.async.SaleDetailLoadService;
 import com.mvcjava.sagt.javafx.async.SaleLoadService;
+import com.mvcjava.sagt.javafx.async.SaleSaveService;
 import com.mvcjava.sagt.javafx.dto.DetailSaleWithProduct;
 import com.mvcjava.sagt.javafx.dto.HeaderSaleWithClient;
+import com.mvcjava.sagt.javafx.enums.PaymentMethod;
 import com.mvcjava.sagt.javafx.util.AlertUtils;
+import com.mvcjava.sagt.javafx.util.DatePickerTableCell;
+import com.mvcjava.sagt.javafx.util.EditableCellFactory;
 import com.mvcjava.sagt.javafx.viewmodel.DetailSaleViewModel;
 import com.mvcjava.sagt.javafx.viewmodel.SaleViewModel;
-import java.sql.Timestamp;
+import java.sql.Date;
+import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.cell.ComboBoxTableCell;
+import javafx.scene.control.cell.TextFieldTableCell;
 
 /**
  *
@@ -39,10 +50,10 @@ public class SalesController {
     
     //Columnas Master
     private TableColumn<SaleViewModel, String> colBillNumber;
-    private TableColumn<SaleViewModel, Timestamp> colDate;
+    private TableColumn<SaleViewModel, LocalDate> colDate;
     private TableColumn<SaleViewModel, String> colClient;
     private TableColumn<SaleViewModel, Number> colTotal;
-    private TableColumn<SaleViewModel, String> colPaymentMethod;
+    private TableColumn<SaleViewModel, PaymentMethod> colPaymentMethod;
     
     //Columnas Detail
     private TableColumn<DetailSaleViewModel, String> colProduct;
@@ -53,22 +64,35 @@ public class SalesController {
     private ObservableList<SaleViewModel> saleViewModels;
     private ObservableList<DetailSaleViewModel> detailViewModels;
     
+    //cambios pendientes
+    private Map<UUID, Map<String, Object>> headersToUpdate;
+    private Map<UUID, Map<String, Object>> detailsToUpdate;
+    
+    //async
     private SaleLoadService saleLoadService;
     private SaleDetailLoadService detailLoadService;
+    private SaleSaveService saleSaveService;
     
     @FXML
     public void initialize() {
         saleViewModels = FXCollections.observableArrayList();
         detailViewModels = FXCollections.observableArrayList();
         
+        headersToUpdate = new HashMap<>();
+        detailsToUpdate = new HashMap<>();
+                
         saleLoadService = new SaleLoadService();
         detailLoadService = new SaleDetailLoadService();
+        saleSaveService = new SaleSaveService();
         
         setupMasterColumns();
         setupDetailColumns();
         
         salesTable.setItems(saleViewModels);
         detailTable.setItems(detailViewModels);
+        
+        salesTable.setEditable(true);
+        detailTable.setEditable(true);
         
         salesTable.getSelectionModel()
                 .selectedItemProperty()
@@ -86,57 +110,176 @@ public class SalesController {
     
     private void setupMasterColumns() {
         colBillNumber = new TableColumn<>("Nº Factura");
-        colBillNumber.setPrefWidth(130);
-        colBillNumber.setCellValueFactory(
-                data -> data.getValue().billNumberProperty());
+        colBillNumber.setPrefWidth(150);
+        colBillNumber.setEditable(true);
+        colBillNumber.setUserData("numero_factura");
+        colBillNumber.setCellValueFactory(data -> data.getValue().billNumberProperty());
+        colBillNumber.setCellFactory(TextFieldTableCell.forTableColumn());
+        colBillNumber.setOnEditCommit(e -> handleHeaderStringEdit(e, "numero_factura"));
  
+        // Fecha – solo lectura por ahora
         colDate = new TableColumn<>("Fecha");
-        colDate.setPrefWidth(160);
-        colDate.setCellValueFactory(
-                data -> new SimpleObjectProperty<Timestamp>(data.getValue().getDate()));
+        colDate.setUserData("fecha");
+        colDate.setPrefWidth(170);
+        colDate.setCellValueFactory(data -> new SimpleObjectProperty<>(data.getValue().getDate().toLocalDate()));
+        colDate.setCellFactory(DatePickerTableCell.forTableColumn());
+        colDate.setOnEditCommit(this::handleDateEdit);
+        colDate.setEditable(true);
  
+        // Cliente – solo lectura por ahora
         colClient = new TableColumn<>("Cliente");
+        colDate.setUserData("id_cliente");
         colClient.setPrefWidth(220);
-        colClient.setCellValueFactory(
-                data -> data.getValue().clientNameProperty());
+        colClient.setCellValueFactory(data -> data.getValue().clientNameProperty());
  
+        // Total – solo lectura (se recalcula en el detalle)
         colTotal = new TableColumn<>("Total");
+        colTotal.setUserData("total");
         colTotal.setPrefWidth(110);
-        colTotal.setCellValueFactory(
-                data -> new SimpleObjectProperty<>(data.getValue().getTotal()));
+        colTotal.setCellValueFactory(data -> new SimpleObjectProperty<>(data.getValue().getTotal()));
  
+        // Método de pago – editable con ComboBox
         colPaymentMethod = new TableColumn<>("Método de pago");
-        colPaymentMethod.setPrefWidth(140);
-        colPaymentMethod.setCellValueFactory(
-                data -> data.getValue().paymentMethodProperty());
+        colPaymentMethod.setUserData("metodo_pago");
+        colPaymentMethod.setPrefWidth(160);
+        colPaymentMethod.setCellValueFactory(data -> data.getValue().paymentMethodProperty());
+        colPaymentMethod.setCellFactory(ComboBoxTableCell.forTableColumn(PaymentMethod.values()));
+        colPaymentMethod.setOnEditCommit(this::handlePaymentMethodEdit);
  
         salesTable.getColumns().addAll(
                 colBillNumber, colDate, colClient, colTotal, colPaymentMethod);
     }
     
     private void setupDetailColumns() {
+        // Producto – solo lectura por ahora
         colProduct = new TableColumn<>("Producto");
+        colProduct.setUserData("id_producto");
         colProduct.setPrefWidth(240);
-        colProduct.setCellValueFactory(
-                data -> data.getValue().productNameProperty());
+        colProduct.setCellValueFactory(data -> data.getValue().productNameProperty());
  
         colAmmount = new TableColumn<>("Cantidad");
-        colAmmount.setPrefWidth(90);
-        colAmmount.setCellValueFactory(
-                data -> new SimpleObjectProperty<>(data.getValue().getAmmount()));
- 
+        colAmmount.setUserData("cantidad");
+        colAmmount.setPrefWidth(100);
+        colAmmount.setCellValueFactory(data -> data.getValue().ammountProperty());
+        colAmmount.setCellFactory(EditableCellFactory.forNumber(
+                v -> v > 0, 
+                "La cantidad debe ser mayor a 0.",
+                (vm, value) -> {
+                    vm.ammountProperty().set(value.intValue()); 
+                    vm.recalculateSubtotal(); 
+                    registerDetailUpdate(vm.getId(), "subtotal", vm.getSubtotal());},
+                false)
+        );
+        colAmmount.setOnEditCommit(this::handleDetailNumberEdit);
+
         colUnitPrice = new TableColumn<>("Precio unitario");
-        colUnitPrice.setPrefWidth(140);
-        colUnitPrice.setCellValueFactory(
-                data -> new SimpleObjectProperty<>(data.getValue().getUnitPrice()));
+        colUnitPrice.setUserData("precio_unitario");
+        colUnitPrice.setPrefWidth(150);
+        colUnitPrice.setCellValueFactory(data -> data.getValue().unitPriceProperty());
+        colUnitPrice.setCellFactory(EditableCellFactory.forNumber(
+                v -> v > 0,
+                "El precio unitario debe ser mayor a 0.",
+                (vm, value) -> {
+                    vm.unitPriceProperty().set(value.floatValue());
+                    vm.recalculateSubtotal();
+                    registerDetailUpdate(vm.getId(), "subtotal", vm.getSubtotal());},
+                true)
+        );
+        colUnitPrice.setOnEditCommit(this::handleDetailNumberEdit);
  
+        // Subtotal – calculado, solo lectura
         colSubtotal = new TableColumn<>("Subtotal");
-        colSubtotal.setPrefWidth(120);
-        colSubtotal.setCellValueFactory(
-                data -> new SimpleObjectProperty<>(data.getValue().getSubtotal()));
+        colSubtotal.setUserData("subtotal");
+        colSubtotal.setPrefWidth(130);
+        colSubtotal.setCellValueFactory(data -> data.getValue().subtotalProperty());
+        colSubtotal.setCellFactory(EditableCellFactory.forNumber(
+                v -> v > 0,
+                "El subtotal debe ser mayor a 0",
+                (vm, value) -> vm.subtotalProperty().set(value.floatValue()),
+                true)
+        );
+        colSubtotal.setOnEditCommit(this::handleDetailNumberEdit);
  
         detailTable.getColumns().addAll(
                 colProduct, colAmmount, colUnitPrice, colSubtotal);
+    }
+    
+    private void handleDateEdit(TableColumn.CellEditEvent<SaleViewModel, LocalDate> e) {
+        System.out.println("Edit date commit");
+        LocalDate newValue = e.getNewValue();
+        LocalDate oldValue = e.getOldValue();
+        
+        if (newValue == null || newValue.equals(oldValue)) {
+            System.out.println("Nuevo: " + newValue.toString() + " Viejo: " + oldValue.toString());
+            System.out.println("Es null o igual");
+            return;
+        };
+        
+        if (newValue.isAfter(LocalDate.now())) {
+            System.out.println("Esto?");
+            AlertUtils.showError("La fecha de la venta no puede ser posterior a la fecha actual");
+            salesTable.refresh();
+            return;
+        }
+        
+        SaleViewModel vm = e.getRowValue();
+        vm.dateProperty().set(Date.valueOf(newValue));
+        registerHeaderUpdate(vm.getId(), "fecha", newValue);
+        System.out.println("Deberia haberse guardado");
+    }
+    
+    private void handleHeaderStringEdit(TableColumn.CellEditEvent<SaleViewModel, String> e, String dbField) {
+        String newValue = normalize(e.getNewValue());
+        String oldValue = normalize(e.getOldValue());
+        
+        if (newValue.equals(oldValue)) return;
+        
+        if (newValue.isEmpty()) {
+            AlertUtils.showError("El campo no puede estar vacío.");
+            salesTable.refresh();
+            return;
+        }
+        if (dbField.equals("numero_factura") && newValue.length() > 20) {
+            AlertUtils.showError("El número de factura no puede superar los 20 carácteres.");
+            salesTable.refresh();
+            return;
+        }
+        
+        SaleViewModel vm = e.getRowValue();
+        vm.billNumberProperty().set(newValue);
+        registerHeaderUpdate(vm.getId(), dbField, newValue);
+    }
+    
+    private void handlePaymentMethodEdit(TableColumn.CellEditEvent<SaleViewModel, PaymentMethod> e) {
+        PaymentMethod newValue = e.getNewValue();
+        PaymentMethod oldValue = e.getOldValue();
+        
+        if (newValue == null || newValue == oldValue) return;
+        
+        SaleViewModel vm = e.getRowValue();
+        vm.paymentMethodProperty().set(newValue);
+        
+        registerHeaderUpdate(vm.getId(), "metodo_pago", newValue.name());
+    }
+    
+    private void handleDetailNumberEdit(TableColumn.CellEditEvent<DetailSaleViewModel, Number> e) {
+        Number newValue = e.getNewValue();
+        Number oldValue = e.getOldValue();
+        
+        if (newValue == null || newValue == oldValue) return;
+        
+        DetailSaleViewModel vm = e.getRowValue();
+        String columnName = e.getTableColumn().getUserData().toString();
+        
+        registerDetailUpdate(vm.getId(), columnName, newValue);
+    }
+    
+    private void registerHeaderUpdate(UUID id, String field, Object value) {
+        headersToUpdate.computeIfAbsent(id, k -> new HashMap<>()).put(field, value);
+    }
+    
+    private void registerDetailUpdate(UUID id, String field, Object value) {
+        detailsToUpdate.computeIfAbsent(id, k -> new HashMap<>()).put(field, value);
     }
     
     private void loadHeaders() {
@@ -185,11 +328,72 @@ public class SalesController {
     
     @FXML
     public void handleReload() {
-        // Limpiar selección y detalle antes de recargar el master
+        if (!headersToUpdate.isEmpty() || !detailsToUpdate.isEmpty()) {
+            Optional<ButtonType> confirm = AlertUtils.showConfirmAlert(
+                    "Hay cambios sin guardar",
+                    "Si recargás, perderás los cambios no guardados. ¿Continuar?");
+            if (confirm.isEmpty() || confirm.get() != ButtonType.OK) return;
+        }
+ 
         salesTable.getSelectionModel().clearSelection();
         detailViewModels.clear();
         detailsLabel.setText("Seleccioná una venta para ver su detalle");
         saleViewModels.clear();
+        headersToUpdate.clear();
+        detailsToUpdate.clear();
+ 
         loadHeaders();
+    }
+    
+    @FXML
+    public void handleSaveChanges() {
+        if (headersToUpdate.isEmpty() && detailsToUpdate.isEmpty()) {
+            AlertUtils.showError("No hay cambios pendientes para guardar.");
+            return;
+        }
+ 
+        Optional<ButtonType> confirm = AlertUtils.showConfirmAlert(
+                "Guardar cambios",
+                "¿Desea guardar los cambios en la base de datos?");
+ 
+        confirm.ifPresent(btn -> {
+            if (btn == ButtonType.OK) {
+                saveData();
+            }
+        });
+    }
+    
+    private void saveData() {
+        if (saleSaveService.isRunning()) return;
+ 
+        saleSaveService.reset();
+        saleSaveService.setData(
+                new HashMap<>(headersToUpdate),
+                new HashMap<>(detailsToUpdate));
+ 
+        int totalHeaders = headersToUpdate.size();
+        int totalDetails = detailsToUpdate.size();
+ 
+        saleSaveService.setOnSucceeded(e -> {
+            headersToUpdate.clear();
+            detailsToUpdate.clear();
+ 
+            AlertUtils.showSuccess(
+                    "Operación exitosa",
+                    "Cambios guardados con éxito",
+                    "Ventas (cabecera) actualizadas: " + totalHeaders
+                    + "\nÍtems de detalle actualizados: " + totalDetails);
+ 
+            loadHeaders();
+        });
+ 
+        saleSaveService.setOnFailed(e ->
+                AlertUtils.showError(saleSaveService.getException().getMessage()));
+ 
+        saleSaveService.start();
+    }
+    
+    private String normalize(String value) {
+        return value == null ? "" : value.trim();
     }
 }

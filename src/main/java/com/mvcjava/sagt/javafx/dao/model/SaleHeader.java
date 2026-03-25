@@ -6,7 +6,7 @@ package com.mvcjava.sagt.javafx.dao.model;
 
 import com.mvcjava.sagt.javafx.enums.PaymentMethod;
 import com.mvcjava.sagt.javafx.util.BasicStringValidator;
-import java.sql.Timestamp;
+import java.sql.Date;
 import java.util.UUID;
 
 /**
@@ -16,7 +16,7 @@ import java.util.UUID;
 public class SaleHeader {
     private UUID id;
     private String billNumber;
-    private Timestamp date;
+    private Date date;
     private UUID clientId;
     private float total;
     private PaymentMethod paymentMethod;
@@ -24,7 +24,7 @@ public class SaleHeader {
     
     public SaleHeader() {}
     
-    public SaleHeader(UUID id, String billNumber, Timestamp date, UUID clientId, float total, PaymentMethod paymentMethod, UUID loadedBy) {
+    public SaleHeader(UUID id, String billNumber, Date date, UUID clientId, float total, PaymentMethod paymentMethod, UUID loadedBy) {
         this.id = id;
         this.billNumber = billNumber;
         this.date = date;
@@ -49,7 +49,7 @@ public class SaleHeader {
         this.billNumber = billNumber;
     }
     
-    public void setDate(Timestamp date) {
+    public void setDate(Date date) {
         if (date == null) {
             throw new IllegalArgumentException("La fecha de la venta no puede ser null.");
         }
@@ -88,7 +88,7 @@ public class SaleHeader {
         return this.billNumber;
     }
     
-    public Timestamp getDate() {
+    public Date getDate() {
         return this.date;
     }
     

@@ -89,7 +89,7 @@ public class ClientDAOImpl implements ClientDAO{
             stmt.setString(6, client.getAddress());
             stmt.setString(7, client.getLocation());
             stmt.setString(8, client.getProvince());
-            stmt.setTimestamp(9, client.getEntryDate());
+            stmt.setDate(9, client.getEntryDate());
             stmt.executeUpdate();
         } catch (SQLException ex) {
             throw new DataAccessException("Error al añadir cliente: " + client.getCuitCuil(), ex);
@@ -167,7 +167,7 @@ public class ClientDAOImpl implements ClientDAO{
         client.setAddress(rs.getString("direccion"));
         client.setLocation(rs.getString("localidad"));
         client.setProvince(rs.getString("provincia"));
-        client.setEntryDate(rs.getTimestamp("fecha_alta"));
+        client.setEntryDate(rs.getDate("fecha_alta"));
         
         return client;
     }

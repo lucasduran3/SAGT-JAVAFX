@@ -6,8 +6,9 @@ package com.mvcjava.sagt.javafx.dao.model;
 
 import com.mvcjava.sagt.javafx.enums.ClientType;
 import com.mvcjava.sagt.javafx.util.BasicStringValidator;
-import java.sql.Timestamp;
+import java.sql.Date;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.UUID;
 
 /**
@@ -24,7 +25,7 @@ public class Client {
     private String address;
     private String location;
     private String province;
-    private Timestamp entryDate;
+    private Date entryDate;
     
     public Client() {}
     
@@ -38,7 +39,7 @@ public class Client {
         setLocation(location);
         setProvince(province);
         setAddress(address);
-        setEntryDate(Timestamp.from(Instant.now()));
+        setEntryDate(Date.valueOf(LocalDate.now()));
     }
     
     /**
@@ -104,7 +105,7 @@ public class Client {
         this.province = province.toLowerCase();            
     }
     
-    public void setEntryDate(Timestamp entryDate) {
+    public void setEntryDate(Date entryDate) {
         if (entryDate != null) {
             this.entryDate = entryDate;
         } else {
@@ -126,6 +127,6 @@ public class Client {
     public String getAddress() { return this.address; }
     public String getLocation() { return this.location; }
     public String getProvince() { return this.province; }
-    public Timestamp getEntryDate() { return this.entryDate; }
+    public Date getEntryDate() { return this.entryDate; }
     
 }   

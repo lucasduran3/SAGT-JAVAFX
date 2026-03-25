@@ -11,7 +11,7 @@ import com.mvcjava.sagt.javafx.enums.ClientType;
 import com.mvcjava.sagt.javafx.util.AlertUtils;
 import com.mvcjava.sagt.javafx.util.BasicStringValidator;
 import com.mvcjava.sagt.javafx.viewmodel.ClientViewModel;
-import java.sql.Timestamp;
+import java.sql.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -50,7 +50,7 @@ public class ClientController {
     private TableColumn<ClientViewModel, String> addressColumn;
     private TableColumn<ClientViewModel, String> locationColumn;
     private TableColumn<ClientViewModel, String> provinceColumn;
-    private TableColumn<ClientViewModel, Timestamp> entryDateColumn;
+    private TableColumn<ClientViewModel, Date> entryDateColumn;
 
     private ObservableList<ClientViewModel> clientViewModels;
 

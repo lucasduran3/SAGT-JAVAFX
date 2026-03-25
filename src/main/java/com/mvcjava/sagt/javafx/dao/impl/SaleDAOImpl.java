@@ -18,6 +18,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public class SaleDAOImpl implements SaleDAO {
@@ -95,11 +96,90 @@ public class SaleDAOImpl implements SaleDAO {
         return result;
     }
 
+    @Override
+    public boolean billNumberExists(UUID excludeId, String billNumber) {
+        String sql = "SELECT 1 FROM app.ventas_cabecera WHERE numero_factura = ? AND id <> ?";
+        try (Connection conn = DatabaseManager.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, billNumber.trim().toLowerCase());
+            stmt.setObject(2, excludeId);
+            
+            try (ResultSet rs = stmt.executeQuery()) {
+                 return rs.next();
+            }
+        } catch (SQLException ex) {
+            throw new DataAccessException("Error al verificar número de factura: " + billNumber, ex);
+        }
+    }
+
+    @Override
+    public void updateHeader(UUID id, Map<String, Object> updates) {
+        if (updates == null || updates.isEmpty()) return;
+        
+        updates.values().removeIf(v -> v == null);
+        if (updates.isEmpty()) return;
+        
+        StringBuilder sql = new StringBuilder("UPDATE app.ventas_cabecera SET ");
+        int idx = 0;
+        for (Map.Entry<String, Object> e : updates.entrySet()) {
+            if (idx++ > 0) sql.append(", ");
+            if (e.getKey().equals("metodo_pago")) {
+                System.out.println(e.getValue());
+                sql.append("metodo_pago = ?::app.e_metodo_pago ");
+            } else {
+                sql.append(e.getKey()).append(" = ? ");
+            }
+        }
+        sql.append(" WHERE id = ? ");
+        
+        try (Connection conn = DatabaseManager.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
+            int i = 1;
+            for (Object val : updates.values()) {
+                stmt.setObject(i++, val);
+            }
+            stmt.setObject(i, id);
+            stmt.executeUpdate();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            throw new DataAccessException("Error al actualizar cabecera de venta con id: " + id, ex);
+        }
+    }
+
+    @Override
+    public void updateDetail(UUID id, Map<String, Object> updates) {
+        if (updates == null || updates.isEmpty()) return;
+        
+        updates.values().removeIf(v -> v == null);
+        if (updates.isEmpty()) return;
+        
+        StringBuilder sql = new StringBuilder("UPDATE app.ventas_detalle SET ");
+        int idx = 0;
+        for (Map.Entry<String, Object> e : updates.entrySet()) {
+            if (idx++ > 0) sql.append(", ");
+            sql.append(e.getKey()).append(" = ?");
+        }
+        sql.append(" WHERE id = ?");
+        
+        try (Connection conn = DatabaseManager.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
+            int i = 1;
+            for (Object val : updates.values()) {
+                stmt.setObject(i++, val);
+            }
+            stmt.setObject(i, id);
+            stmt.executeUpdate();
+        }  catch (SQLException ex) {
+            throw new DataAccessException("Error al actualizar detalle de venta con id: " + id, ex);
+        }
+        
+    }
+
     private SaleHeader mapResultSetToHeader(ResultSet rs) throws SQLException {
         SaleHeader vc = new SaleHeader();
         vc.setId((UUID) rs.getObject("id"));
         vc.setBillNumber(rs.getString("numero_factura"));
-        vc.setDate(rs.getTimestamp("fecha"));
+        vc.setDate(rs.getDate("fecha"));
         vc.setClientId((UUID) rs.getObject("id_cliente"));
         vc.setTotal(rs.getFloat("total"));
         vc.setPaymentMethod(PaymentMethod.fromString(rs.getString("metodo_pago")));

@@ -24,6 +24,7 @@
         <TextField promptText="Buscar venta..." prefWidth="250" styleClass="searchInput"/>
         <Region HBox.hgrow="ALWAYS"/>
         <Button text="Recargar" styleClass="btnWarning" onAction="#handleReload"/>
+        <Button text="Guardar cambios" styleClass="btnPrimary" onAction="#handleSaveChanges"/>
     </HBox>
 
     <SplitPane orientation="VERTICAL" VBox.vgrow="ALWAYS" dividerPositions="0.5">
@@ -32,7 +33,7 @@
         <TableView fx:id="salesTable" VBox.vgrow="ALWAYS">
             <columns/>
             <placeholder>
-                <Label text="No hay ventas registradas"/>
+                <Label text="No hay ventas registradas" />
             </placeholder>
         </TableView>
 

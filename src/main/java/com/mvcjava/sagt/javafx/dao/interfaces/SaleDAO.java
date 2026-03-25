@@ -7,6 +7,7 @@ package com.mvcjava.sagt.javafx.dao.interfaces;
 import com.mvcjava.sagt.javafx.dto.DetailSaleWithProduct;
 import com.mvcjava.sagt.javafx.dto.HeaderSaleWithClient;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -16,4 +17,7 @@ import java.util.UUID;
 public interface SaleDAO {
     List<HeaderSaleWithClient> findAllHeaders();
     List<DetailSaleWithProduct> findDetailBySaleId(UUID saleId);
+    boolean billNumberExists(UUID excludeId, String billNumber);
+    void updateHeader(UUID id, Map<String, Object> updates);
+    void updateDetail(UUID id, Map<String, Object> updates);
 }

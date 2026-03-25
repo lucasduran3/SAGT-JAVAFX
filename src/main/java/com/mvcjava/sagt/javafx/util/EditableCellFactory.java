@@ -58,20 +58,20 @@ public class EditableCellFactory<S,T> implements Callback<TableColumn<S,T>, Tabl
     
     //Factory metodos estaticos para casos comunes
     
-    public static EditableCellFactory<ProductViewModel, String> forString(
+    public static <S> EditableCellFactory <S, String> forString(
             int minLength, 
             int maxLength, 
-            BiConsumer<ProductViewModel, String> propertyUpdater
+            BiConsumer<S, String> propertyUpdater
     ) {
         BasicStringValidator validator = new BasicStringValidator();
         return new EditableCellFactory<>(new DefaultStringConverter(), 
                 (value, fieldName) -> validator.validate(value, minLength, maxLength, fieldName), propertyUpdater);
     }
     
-    public static EditableCellFactory<ProductViewModel, Number> forNumber(
+    public static <S> EditableCellFactory<S, Number> forNumber(
             Predicate<Float> validator,
             String errorMessage,
-            BiConsumer<ProductViewModel, Number> propertyUpdater,
+            BiConsumer<S, Number> propertyUpdater,
             boolean isFloat
     ) {
         return new EditableCellFactory<>(

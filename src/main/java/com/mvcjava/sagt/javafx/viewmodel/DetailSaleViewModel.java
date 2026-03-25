@@ -4,6 +4,7 @@
  */
 package com.mvcjava.sagt.javafx.viewmodel;
 
+import com.mvcjava.sagt.javafx.dao.model.SaleDetail;
 import com.mvcjava.sagt.javafx.dto.DetailSaleWithProduct;
 import java.util.UUID;
 import javafx.beans.property.FloatProperty;
@@ -27,14 +28,24 @@ public class DetailSaleViewModel {
     private final FloatProperty subtotal = new SimpleFloatProperty();
     
     private final DetailSaleWithProduct source;
+    private final SaleDetail detail;
     
     public DetailSaleViewModel(DetailSaleWithProduct dto) {
         this.source = dto;
+        this.detail = dto.getDetail();
         this.id.set(dto.getDetail().getId());
         this.productName.set(dto.getProductName());
         this.ammount.set(dto.getDetail().getAmmount());
         this.unitPrice.set(dto.getDetail().getUnitPrice());
         this.subtotal.set(dto.getDetail().getSubtotal());
+        
+        this.setupSync();
+    }
+    
+    private void setupSync() {
+        this.ammount.addListener((obs, old, val) -> this.detail.setAmmount(val.intValue()));
+        this.unitPrice.addListener((obs, old, val) -> this.detail.setUnitPrice(val.floatValue()));
+        this.subtotal.addListener((obs, old, val) -> this.detail.setSubtotal(val.floatValue()));
     }
     
     public ObjectProperty<UUID> idProperty() { return this.id; }
@@ -48,4 +59,14 @@ public class DetailSaleViewModel {
     public int getAmmount() { return this.ammount.get(); }
     public float getUnitPrice() { return this.unitPrice.get(); }
     public float getSubtotal() { return this.subtotal.get(); }
+    
+    public SaleDetail getDetail() { return this.detail; }
+    
+    /*Recalcula y actualiza el subtotal a partir del precio unitario y la cantidad
+    Debe llamarse cada vez que se actualiza uno de los dos*/
+    public void recalculateSubtotal() {
+        System.out.println("Entra en calcular subtotal");
+        subtotal.set(unitPrice.get() * ammount.get());
+        System.out.println("Resultado final: " + subtotal.get());
+    }
 }

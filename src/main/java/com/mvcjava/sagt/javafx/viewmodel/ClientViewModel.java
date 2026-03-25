@@ -6,7 +6,7 @@ package com.mvcjava.sagt.javafx.viewmodel;
 
 import com.mvcjava.sagt.javafx.dao.model.Client;
 import com.mvcjava.sagt.javafx.enums.ClientType;
-import java.sql.Timestamp;
+import java.sql.Date;
 import java.util.Objects;
 import java.util.UUID;
 import javafx.beans.property.BooleanProperty;
@@ -30,7 +30,7 @@ public class ClientViewModel {
     private final StringProperty address;
     private final StringProperty location;
     private final StringProperty province;
-    private final ObjectProperty<Timestamp> entryDate;
+    private final ObjectProperty<Date> entryDate;
     private final BooleanProperty selected;
     
     private boolean isNew;
@@ -98,7 +98,7 @@ public class ClientViewModel {
         return province;
     }
 
-    public ObjectProperty<Timestamp> entryDateProperty() {
+    public ObjectProperty<Date> entryDateProperty() {
         return entryDate;
     }
 
@@ -114,7 +114,7 @@ public class ClientViewModel {
         return client.getId();
     }
 
-    public Timestamp getEntryDate() {
+    public Date getEntryDate() {
         return client.getEntryDate();
     }
 
