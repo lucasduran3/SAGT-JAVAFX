@@ -21,8 +21,11 @@ public class DatePickerTableCell<S> extends TableCell<S, LocalDate> {
     public DatePickerTableCell() {
         this.datePicker = new DatePicker();
         
-        datePicker.valueProperty().addListener((obs, old, val) -> {
-            if (isEditing() && val != null) commitEdit(val);
+        datePicker.setOnAction(e -> {
+            LocalDate selected = datePicker.getValue();
+            if (isEditing() && selected != null) {
+                commitEdit(selected);
+            }
         });
         
         //Cancelar si el usuario cierra el popup sin seleccionar
@@ -34,15 +37,25 @@ public class DatePickerTableCell<S> extends TableCell<S, LocalDate> {
     @Override
     public void startEdit() {
         super.startEdit();
-        datePicker.setValue(getItem());
+        if (getItem() != null) {
+            datePicker.setValue(getItem());
+        }
         setGraphic(datePicker);
         setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
+        datePicker.show();
     }
 
     @Override
     public void cancelEdit() {
         super.cancelEdit();
         setText(getItem() == null ? "" : getItem().toString());
+        setGraphic(null);
+        setContentDisplay(ContentDisplay.TEXT_ONLY);
+    }
+    
+    @Override
+    public void commitEdit(LocalDate date) {
+        super.commitEdit(date);
         setGraphic(null);
         setContentDisplay(ContentDisplay.TEXT_ONLY);
     }

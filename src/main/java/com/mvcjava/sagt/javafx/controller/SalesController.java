@@ -73,8 +73,12 @@ public class SalesController {
     private SaleDetailLoadService detailLoadService;
     private SaleSaveService saleSaveService;
     
+    private SaleViewModel currentSale;
+    
     @FXML
     public void initialize() {
+        currentSale = null;
+        
         saleViewModels = FXCollections.observableArrayList();
         detailViewModels = FXCollections.observableArrayList();
         
@@ -98,8 +102,10 @@ public class SalesController {
                 .selectedItemProperty()
                 .addListener((obs, oldVal, newVal) -> {
                     if (newVal != null) {
+                        currentSale = newVal;
                         loadDetail(newVal.getId(), newVal.getBillNumber());
                     } else {
+                        currentSale = null;
                         detailViewModels.clear();
                         detailsLabel.setText("Selecciona una venta para ver su detalle");
                     }
@@ -136,7 +142,7 @@ public class SalesController {
         colTotal = new TableColumn<>("Total");
         colTotal.setUserData("total");
         colTotal.setPrefWidth(110);
-        colTotal.setCellValueFactory(data -> new SimpleObjectProperty<>(data.getValue().getTotal()));
+        colTotal.setCellValueFactory(data -> data.getValue().totalProperty());
  
         // Método de pago – editable con ComboBox
         colPaymentMethod = new TableColumn<>("Método de pago");
@@ -167,6 +173,7 @@ public class SalesController {
                 (vm, value) -> {
                     vm.ammountProperty().set(value.intValue()); 
                     vm.recalculateSubtotal(); 
+                    recalculateTotal(vm.getDetail().getSaleId());
                     registerDetailUpdate(vm.getId(), "subtotal", vm.getSubtotal());},
                 false)
         );
@@ -182,6 +189,7 @@ public class SalesController {
                 (vm, value) -> {
                     vm.unitPriceProperty().set(value.floatValue());
                     vm.recalculateSubtotal();
+                    recalculateTotal(vm.getDetail().getSaleId());
                     registerDetailUpdate(vm.getId(), "subtotal", vm.getSubtotal());},
                 true)
         );
@@ -192,40 +200,35 @@ public class SalesController {
         colSubtotal.setUserData("subtotal");
         colSubtotal.setPrefWidth(130);
         colSubtotal.setCellValueFactory(data -> data.getValue().subtotalProperty());
-        colSubtotal.setCellFactory(EditableCellFactory.forNumber(
-                v -> v > 0,
-                "El subtotal debe ser mayor a 0",
-                (vm, value) -> vm.subtotalProperty().set(value.floatValue()),
-                true)
-        );
-        colSubtotal.setOnEditCommit(this::handleDetailNumberEdit);
  
         detailTable.getColumns().addAll(
                 colProduct, colAmmount, colUnitPrice, colSubtotal);
     }
     
     private void handleDateEdit(TableColumn.CellEditEvent<SaleViewModel, LocalDate> e) {
-        System.out.println("Edit date commit");
         LocalDate newValue = e.getNewValue();
-        LocalDate oldValue = e.getOldValue();
         
-        if (newValue == null || newValue.equals(oldValue)) {
-            System.out.println("Nuevo: " + newValue.toString() + " Viejo: " + oldValue.toString());
-            System.out.println("Es null o igual");
+        if (newValue == null) {
+            salesTable.refresh();
             return;
-        };
+        }
         
         if (newValue.isAfter(LocalDate.now())) {
-            System.out.println("Esto?");
             AlertUtils.showError("La fecha de la venta no puede ser posterior a la fecha actual");
             salesTable.refresh();
             return;
         }
         
         SaleViewModel vm = e.getRowValue();
+        
+        //Comparar contra el valor actual del viewModel por que getOldValue ya puede reflejar el nuevo valor
+        LocalDate current = vm.getDate() != null ? vm.getDate().toLocalDate() : null;
+        if (newValue.equals(current)) {
+            return;
+        }
+        
         vm.dateProperty().set(Date.valueOf(newValue));
-        registerHeaderUpdate(vm.getId(), "fecha", newValue);
-        System.out.println("Deberia haberse guardado");
+        registerHeaderUpdate(vm.getId(), "fecha", Date.valueOf(newValue));
     }
     
     private void handleHeaderStringEdit(TableColumn.CellEditEvent<SaleViewModel, String> e, String dbField) {
@@ -280,6 +283,22 @@ public class SalesController {
     
     private void registerDetailUpdate(UUID id, String field, Object value) {
         detailsToUpdate.computeIfAbsent(id, k -> new HashMap<>()).put(field, value);
+    }
+    
+    private void recalculateTotal(UUID saleId) {
+        if (saleId == null) return;
+
+        float total = detailViewModels.stream()
+            .filter(e -> saleId.equals(e.getDetail().getSaleId()))
+            .map(DetailSaleViewModel::getSubtotal)
+            .reduce(0.00f, Float::sum);
+
+        System.out.println("Total calculado: " + total + " tamaño de lista " + detailViewModels.stream()
+            .filter(e -> saleId.equals(e.getDetail().getSaleId())).collect(Collectors.toList()).size());
+    
+        currentSale.totalProperty().set(total);
+        
+        registerHeaderUpdate(saleId, "total", total);
     }
     
     private void loadHeaders() {
