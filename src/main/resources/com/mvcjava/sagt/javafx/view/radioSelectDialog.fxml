@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<DialogPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            prefWidth="500"
+            prefHeight="420">
+
+    <headerText>Seleccionar Cliente</headerText>
+
+    <content>
+        <VBox spacing="12">
+            <padding>
+                <Insets top="10" right="10" bottom="10" left="10"/>
+            </padding>
+
+            <!-- Search bar -->
+            <TextField fx:id="searchField"
+                       promptText="Buscar por razón social o ID..."
+                       styleClass="searchInput"/>
+
+            <!-- Table header -->
+            <HBox styleClass="selectHeader" spacing="0">
+                <Label text="" prefWidth="40"/>
+                <Label text="Razón Social" prefWidth="250" style="-fx-font-weight: bold;"/>
+                <Label text="ID" HBox.hgrow="ALWAYS" style="-fx-font-weight: bold;"/>
+            </HBox>
+
+            <!-- Client list inside a scroll pane -->
+            <ScrollPane fitToWidth="true"
+                        hbarPolicy="NEVER"
+                        vbarPolicy="AS_NEEDED"
+                        prefHeight="260"
+                        VBox.vgrow="ALWAYS">
+                <VBox fx:id="listContainer" spacing="0"/>
+            </ScrollPane>
+
+            <!-- Selection indicator -->
+            <Label fx:id="selectionLabel"
+                   text="Ningún cliente seleccionado"
+                   style="-fx-text-fill: #a0a0a0; -fx-font-style: italic;"/>
+        </VBox>
+    </content>
+
+    <buttonTypes>
+        <ButtonType fx:constant="OK"/>
+        <ButtonType fx:constant="CANCEL"/>
+    </buttonTypes>
+
+</DialogPane>

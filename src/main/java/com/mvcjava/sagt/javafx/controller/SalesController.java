@@ -4,9 +4,13 @@
  */
 package com.mvcjava.sagt.javafx.controller;
 
+import com.mvcjava.sagt.javafx.async.BasicProductLoadService;
+import com.mvcjava.sagt.javafx.async.ClientLoadService;
 import com.mvcjava.sagt.javafx.async.SaleDetailLoadService;
 import com.mvcjava.sagt.javafx.async.SaleLoadService;
 import com.mvcjava.sagt.javafx.async.SaleSaveService;
+import com.mvcjava.sagt.javafx.dao.model.Client;
+import com.mvcjava.sagt.javafx.dao.model.Product;
 import com.mvcjava.sagt.javafx.dto.DetailSaleWithProduct;
 import com.mvcjava.sagt.javafx.dto.HeaderSaleWithClient;
 import com.mvcjava.sagt.javafx.enums.PaymentMethod;
@@ -17,22 +21,29 @@ import com.mvcjava.sagt.javafx.viewmodel.DetailSaleViewModel;
 import com.mvcjava.sagt.javafx.viewmodel.SaleViewModel;
 import java.sql.Date;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
+import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.ComboBoxTableCell;
 import javafx.scene.control.cell.TextFieldTableCell;
+import javafx.scene.layout.HBox;
 
 /**
  *
@@ -64,6 +75,9 @@ public class SalesController {
     private ObservableList<SaleViewModel> saleViewModels;
     private ObservableList<DetailSaleViewModel> detailViewModels;
     
+    private List<Client> availableClients = new ArrayList<>();
+    private List<Product> avaibleProducts = new ArrayList<>();
+    
     //cambios pendientes
     private Map<UUID, Map<String, Object>> headersToUpdate;
     private Map<UUID, Map<String, Object>> detailsToUpdate;
@@ -72,6 +86,8 @@ public class SalesController {
     private SaleLoadService saleLoadService;
     private SaleDetailLoadService detailLoadService;
     private SaleSaveService saleSaveService;
+    private ClientLoadService clientLoadService;
+    private BasicProductLoadService productLoadService;
     
     private SaleViewModel currentSale;
     
@@ -88,6 +104,8 @@ public class SalesController {
         saleLoadService = new SaleLoadService();
         detailLoadService = new SaleDetailLoadService();
         saleSaveService = new SaleSaveService();
+        clientLoadService = new ClientLoadService();
+        productLoadService = new BasicProductLoadService();
         
         setupMasterColumns();
         setupDetailColumns();
@@ -103,7 +121,7 @@ public class SalesController {
                 .addListener((obs, oldVal, newVal) -> {
                     if (newVal != null) {
                         currentSale = newVal;
-                        loadDetail(newVal.getId(), newVal.getBillNumber());
+                        loadProducts(newVal.getId(), newVal.getBillNumber());
                     } else {
                         currentSale = null;
                         detailViewModels.clear();
@@ -111,7 +129,7 @@ public class SalesController {
                     }
                 });
         
-        loadHeaders();
+        loadClients();
     }
     
     private void setupMasterColumns() {
@@ -136,7 +154,43 @@ public class SalesController {
         colClient = new TableColumn<>("Cliente");
         colDate.setUserData("id_cliente");
         colClient.setPrefWidth(220);
+        colClient.setEditable(false);
         colClient.setCellValueFactory(data -> data.getValue().clientNameProperty());
+        colClient.setCellFactory(col -> new TableCell<SaleViewModel, String>() {
+ 
+            private final Label label = new Label();
+            private final HBox  container = new HBox(label);
+ 
+            {
+                container.setAlignment(Pos.CENTER_LEFT);
+                container.setPadding(new Insets(2, 5, 2, 5));
+ 
+                container.setOnMouseClicked(event -> {
+                    if (event.getClickCount() == 2 && !isEmpty()) {
+                        SaleViewModel vm = getTableRow().getItem();
+                        if (vm != null) {
+                            openClientSelectDialog(vm);
+                        }
+                    }
+                });
+            }
+            
+             @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setGraphic(null);
+                    setTooltip(null);
+                } else {
+                    label.setText(item);
+                    label.setStyle("-fx-text-fill: #1E88E5; -fx-underline: true;");
+                    javafx.scene.control.Tooltip tip =
+                            new javafx.scene.control.Tooltip("Doble clic para cambiar el cliente");
+                    setTooltip(tip);
+                    setGraphic(container);
+                }
+            }
+        });
  
         // Total – solo lectura (se recalcula en el detalle)
         colTotal = new TableColumn<>("Total");
@@ -161,7 +215,41 @@ public class SalesController {
         colProduct = new TableColumn<>("Producto");
         colProduct.setUserData("id_producto");
         colProduct.setPrefWidth(240);
+        colProduct.setEditable(false);
         colProduct.setCellValueFactory(data -> data.getValue().productNameProperty());
+        colProduct.setCellFactory(col -> new TableCell<DetailSaleViewModel, String>() {
+            private final Label label = new Label();
+            private final HBox container = new HBox(label);
+            
+            {
+                container.setAlignment(Pos.CENTER_LEFT);
+                container.setPadding(new Insets(2,5,2,5));
+                container.setOnMouseClicked(e -> {
+                    if (e.getClickCount() == 2 && !isEmpty()) {
+                        DetailSaleViewModel vm = getTableRow().getItem();
+                        if (vm != null) {
+                            openProductSelectDialog(vm);
+                        }
+                    }
+                });
+            }
+            
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setGraphic(null);
+                    setTooltip(null);
+                } else {
+                    label.setText(item);
+                    label.setStyle("-fx-text-fill: #1E88E5; -fx-underline: true;");
+                    javafx.scene.control.Tooltip tip =
+                            new javafx.scene.control.Tooltip("Doble clic para cambiar el producto");
+                    setTooltip(tip);
+                    setGraphic(container);
+                }
+            }
+        });
  
         colAmmount = new TableColumn<>("Cantidad");
         colAmmount.setUserData("cantidad");
@@ -203,6 +291,54 @@ public class SalesController {
  
         detailTable.getColumns().addAll(
                 colProduct, colAmmount, colUnitPrice, colSubtotal);
+    }
+    
+    private void openClientSelectDialog(SaleViewModel vm) {
+        if (availableClients.isEmpty()) {
+            AlertUtils.showError("No hay clientes disponibles para seleccionar.");
+            return;
+        }
+ 
+        UUID currentClientId = vm.getHeader().getClientId();
+ 
+        Client chosen = RadioDialogController.showDialog(
+                salesTable.getScene().getWindow(),
+                "Seleccionar Cliente",
+                availableClients,
+                Client::getCompanyName,
+                Client::getId,
+                currentClientId);
+ 
+        if (chosen == null) return;
+        if (chosen.getId().equals(currentClientId)) return;
+ 
+        vm.clientNameProperty().set(chosen.getCompanyName());
+        vm.getHeader().setClientId(chosen.getId());
+        registerHeaderUpdate(vm.getId(), "id_cliente", chosen.getId());
+    }
+    
+    private void openProductSelectDialog(DetailSaleViewModel vm) {
+        if (avaibleProducts.isEmpty()) {
+            AlertUtils.showError("No hay productos disponibles para seleccionar.");
+            return;
+        }
+        
+        UUID currentProductId = vm.getDetail().getProductId();
+        
+        Product chosen = RadioDialogController.showDialog(
+                detailTable.getScene().getWindow(),
+                "Seleccionar Producto", 
+                avaibleProducts, 
+                Product::getName,
+                Product::getId,
+                currentProductId);
+        
+        if (chosen == null) return;
+        if (chosen.getId().equals(currentProductId)) return;
+        
+        vm.productNameProperty().set(chosen.getName());
+        vm.getDetail().setProductId(chosen.getId());
+        registerDetailUpdate(vm.getId(), "id_producto", chosen.getId());
     }
     
     private void handleDateEdit(TableColumn.CellEditEvent<SaleViewModel, LocalDate> e) {
@@ -299,6 +435,51 @@ public class SalesController {
         currentSale.totalProperty().set(total);
         
         registerHeaderUpdate(saleId, "total", total);
+    }
+    
+    private void loadClients() {
+        if (clientLoadService.isRunning()) return;
+ 
+        clientLoadService.reset();
+ 
+        clientLoadService.setOnSucceeded(e -> {
+            Set<Client> clientSet = clientLoadService.getValue();
+            availableClients = new ArrayList<>(clientSet);
+            // Sort alphabetically for convenience
+            availableClients.sort(
+                java.util.Comparator.comparing(Client::getCompanyName));
+            loadHeaders();
+        });
+ 
+        clientLoadService.setOnFailed(e -> {
+            AlertUtils.showError(
+                "Error al cargar clientes: " + clientLoadService.getException().getMessage());
+            // Load headers anyway – client column will just be read-only effectively
+            loadHeaders();
+        });
+ 
+        clientLoadService.start();
+    }
+    
+    private void loadProducts(UUID saleId, String billNumber) {
+        if (productLoadService.isRunning()) return;
+        
+        productLoadService.reset();
+        
+        productLoadService.setOnSucceeded(e -> {
+            List<Product> productList = productLoadService.getValue();
+            avaibleProducts = new ArrayList<>(productList);
+            
+            avaibleProducts.sort(Comparator.comparing(Product::getName));
+            loadDetail(saleId, billNumber);
+        });
+        
+        productLoadService.setOnFailed(e -> {
+            AlertUtils.showError("Error al cargar productos: " + productLoadService.getException().getMessage());
+            loadDetail(saleId, billNumber);
+        });
+        
+        productLoadService.start();
     }
     
     private void loadHeaders() {

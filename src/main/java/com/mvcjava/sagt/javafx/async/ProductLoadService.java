@@ -5,9 +5,12 @@
 package com.mvcjava.sagt.javafx.async;
 
 import com.mvcjava.sagt.javafx.dao.model.Category;
+import com.mvcjava.sagt.javafx.dao.model.Client;
+import com.mvcjava.sagt.javafx.dao.model.Product;
 import com.mvcjava.sagt.javafx.dao.model.Supplier;
 import com.mvcjava.sagt.javafx.dto.ProductViewData;
 import com.mvcjava.sagt.javafx.dto.ProductWithRelations;
+import com.mvcjava.sagt.javafx.service.impl.ProductServiceImpl;
 import com.mvcjava.sagt.javafx.service.interfaces.CategoryService;
 import com.mvcjava.sagt.javafx.service.interfaces.ProductService;
 import com.mvcjava.sagt.javafx.service.interfaces.SupplierService;
