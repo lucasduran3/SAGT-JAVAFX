@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<DialogPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            prefWidth="480">
+
+    <headerText>Nueva Venta</headerText>
+
+    <content>
+        <VBox spacing="20">
+            <padding>
+                <Insets top="10" right="10" bottom="10" left="10"/>
+            </padding>
+
+            <Label text="Complete los datos para registrar una nueva venta.&#10;Los campos con * son obligatorios."
+                   wrapText="true"/>
+
+            <GridPane hgap="20" vgap="14">
+                <columnConstraints>
+                    <ColumnConstraints percentWidth="50" hgrow="ALWAYS"/>
+                    <ColumnConstraints percentWidth="50" hgrow="ALWAYS"/>
+                </columnConstraints>
+
+                <!-- Número de factura -->
+                <VBox spacing="5" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                    <Label text="* Número de factura"/>
+                    <TextField fx:id="billNumberField" promptText="Ej: 0001-00000001"/>
+                    <Label fx:id="errorBillNumber" style="-fx-text-fill: #E63946; -fx-font-size: 11px;"/>
+                </VBox>
+
+                <!-- Fecha -->
+                <VBox spacing="5" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                    <Label text="* Fecha"/>
+                    <DatePicker fx:id="datePicker" maxWidth="Infinity"/>
+                    <Label fx:id="errorDate" style="-fx-text-fill: #E63946; -fx-font-size: 11px;"/>
+                </VBox>
+
+                <!-- Cliente -->
+                <VBox spacing="5" GridPane.columnIndex="0" GridPane.rowIndex="1" GridPane.columnSpan="2">
+                    <Label text="* Cliente"/>
+                    <ComboBox fx:id="clientComboBox" maxWidth="Infinity" promptText="Seleccione un cliente..."/>
+                    <Label fx:id="errorClient" style="-fx-text-fill: #E63946; -fx-font-size: 11px;"/>
+                </VBox>
+
+                <!-- Método de pago -->
+                <VBox spacing="5" GridPane.columnIndex="0" GridPane.rowIndex="2" GridPane.columnSpan="2">
+                    <Label text="* Método de pago"/>
+                    <ComboBox fx:id="paymentMethodComboBox" maxWidth="Infinity" promptText="Seleccione un método..."/>
+                    <Label fx:id="errorPaymentMethod" style="-fx-text-fill: #E63946; -fx-font-size: 11px;"/>
+                </VBox>
+
+            </GridPane>
+        </VBox>
+    </content>
+
+    <buttonTypes>
+        <ButtonType fx:constant="OK"/>
+        <ButtonType fx:constant="CANCEL"/>
+    </buttonTypes>
+
+</DialogPane>

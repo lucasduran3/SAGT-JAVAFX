@@ -20,32 +20,48 @@
         <URL value="@styles/mainView.css"/>
     </stylesheets>
 
+    <!-- ── Barra de herramientas MASTER ──────────────────────────────────── -->
     <HBox spacing="10" alignment="CENTER_LEFT">
         <TextField promptText="Buscar venta..." prefWidth="250" styleClass="searchInput"/>
         <Region HBox.hgrow="ALWAYS"/>
-        <Button text="Recargar" styleClass="btnWarning" onAction="#handleReload"/>
-        <Button text="Guardar cambios" styleClass="btnPrimary" onAction="#handleSaveChanges"/>
+        <Button text="Agregar venta"   styleClass="btnPrimary" onAction="#handleAddSale"/>
+        <Button text="Recargar"        styleClass="btnWarning" onAction="#handleReload"/>
+        <Button text="Guardar cambios" styleClass="btnSuccess" onAction="#handleSaveChanges"/>
     </HBox>
 
     <SplitPane orientation="VERTICAL" VBox.vgrow="ALWAYS" dividerPositions="0.5">
 
-        <!-- ── MASTER ─────────────────────────────────────────────────── -->
+        <!-- ── MASTER ──────────────────────────────────────────────────────── -->
         <TableView fx:id="salesTable" VBox.vgrow="ALWAYS">
             <columns/>
             <placeholder>
-                <Label text="No hay ventas registradas" />
+                <Label text="No hay ventas registradas"/>
             </placeholder>
         </TableView>
 
-        <!-- ── DETAIL ─────────────────────────────────────────────────── -->
+        <!-- ── DETAIL ──────────────────────────────────────────────────────── -->
         <VBox spacing="10">
             <padding>
                 <Insets top="8" right="0" bottom="0" left="0"/>
             </padding>
 
-            <Label fx:id="detailsLabel"
-                   text="Seleccioná una venta para ver su detalle"
-                   styleClass="sectionTitle"/>
+            <!-- Barra de herramientas DETAIL -->
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label fx:id="detailsLabel"
+                       text="Seleccioná una venta para ver su detalle"
+                       styleClass="sectionTitle"
+                       HBox.hgrow="ALWAYS"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <!--
+                    El botón "Agregar detalle" sólo se habilita cuando hay una venta
+                    seleccionada; la lógica se maneja en SalesController.
+                -->
+                <Button fx:id="addDetailBtn"
+                        text="Agregar ítem"
+                        styleClass="btnPrimary"
+                        onAction="#handleAddDetail"
+                        disable="true"/>
+            </HBox>
 
             <TableView fx:id="detailTable" VBox.vgrow="ALWAYS">
                 <columns/>

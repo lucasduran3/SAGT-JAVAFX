@@ -9,10 +9,15 @@ import com.mvcjava.sagt.javafx.async.ClientLoadService;
 import com.mvcjava.sagt.javafx.async.SaleDetailLoadService;
 import com.mvcjava.sagt.javafx.async.SaleLoadService;
 import com.mvcjava.sagt.javafx.async.SaleSaveService;
+import com.mvcjava.sagt.javafx.auth.SessionContext;
 import com.mvcjava.sagt.javafx.dao.model.Client;
 import com.mvcjava.sagt.javafx.dao.model.Product;
+import com.mvcjava.sagt.javafx.dao.model.SaleDetail;
+import com.mvcjava.sagt.javafx.dao.model.SaleHeader;
 import com.mvcjava.sagt.javafx.dto.DetailSaleWithProduct;
 import com.mvcjava.sagt.javafx.dto.HeaderSaleWithClient;
+import com.mvcjava.sagt.javafx.dto.SaleDetailFormData;
+import com.mvcjava.sagt.javafx.dto.SaleHeaderFormData;
 import com.mvcjava.sagt.javafx.enums.PaymentMethod;
 import com.mvcjava.sagt.javafx.util.AlertUtils;
 import com.mvcjava.sagt.javafx.util.DatePickerTableCell;
@@ -36,6 +41,7 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableCell;
@@ -52,12 +58,12 @@ import javafx.scene.layout.HBox;
 public class SalesController {
     @FXML
     private TableView<SaleViewModel> salesTable;
-    
     @FXML
     private Label detailsLabel;
-    
     @FXML
     private TableView<DetailSaleViewModel> detailTable;
+    @FXML
+    private Button addDetailBtn;
     
     //Columnas Master
     private TableColumn<SaleViewModel, String> colBillNumber;
@@ -81,6 +87,8 @@ public class SalesController {
     //cambios pendientes
     private Map<UUID, Map<String, Object>> headersToUpdate;
     private Map<UUID, Map<String, Object>> detailsToUpdate;
+    private List<UUID> headersToDelete;
+    private List<UUID> detailsToDelete;
     
     //async
     private SaleLoadService saleLoadService;
@@ -89,6 +97,7 @@ public class SalesController {
     private ClientLoadService clientLoadService;
     private BasicProductLoadService productLoadService;
     
+    //Estado
     private SaleViewModel currentSale;
     
     @FXML
@@ -100,6 +109,8 @@ public class SalesController {
         
         headersToUpdate = new HashMap<>();
         detailsToUpdate = new HashMap<>();
+        headersToDelete = new ArrayList<>();
+        detailsToDelete = new ArrayList<>();
                 
         saleLoadService = new SaleLoadService();
         detailLoadService = new SaleDetailLoadService();
@@ -112,7 +123,6 @@ public class SalesController {
         
         salesTable.setItems(saleViewModels);
         detailTable.setItems(detailViewModels);
-        
         salesTable.setEditable(true);
         detailTable.setEditable(true);
         
@@ -121,9 +131,11 @@ public class SalesController {
                 .addListener((obs, oldVal, newVal) -> {
                     if (newVal != null) {
                         currentSale = newVal;
+                        addDetailBtn.setDisable(false);
                         loadProducts(newVal.getId(), newVal.getBillNumber());
                     } else {
                         currentSale = null;
+                        addDetailBtn.setDisable(true);
                         detailViewModels.clear();
                         detailsLabel.setText("Selecciona una venta para ver su detalle");
                     }
@@ -262,7 +274,7 @@ public class SalesController {
                     vm.ammountProperty().set(value.intValue()); 
                     vm.recalculateSubtotal(); 
                     recalculateTotal(vm.getDetail().getSaleId());
-                    registerDetailUpdate(vm.getId(), "subtotal", vm.getSubtotal());},
+                    registerDetailUpdate(vm, "subtotal", vm.getSubtotal());},
                 false)
         );
         colAmmount.setOnEditCommit(this::handleDetailNumberEdit);
@@ -278,7 +290,7 @@ public class SalesController {
                     vm.unitPriceProperty().set(value.floatValue());
                     vm.recalculateSubtotal();
                     recalculateTotal(vm.getDetail().getSaleId());
-                    registerDetailUpdate(vm.getId(), "subtotal", vm.getSubtotal());},
+                    registerDetailUpdate(vm, "subtotal", vm.getSubtotal());},
                 true)
         );
         colUnitPrice.setOnEditCommit(this::handleDetailNumberEdit);
@@ -314,7 +326,7 @@ public class SalesController {
  
         vm.clientNameProperty().set(chosen.getCompanyName());
         vm.getHeader().setClientId(chosen.getId());
-        registerHeaderUpdate(vm.getId(), "id_cliente", chosen.getId());
+        registerHeaderUpdate(vm, "id_cliente", chosen.getId());
     }
     
     private void openProductSelectDialog(DetailSaleViewModel vm) {
@@ -338,7 +350,79 @@ public class SalesController {
         
         vm.productNameProperty().set(chosen.getName());
         vm.getDetail().setProductId(chosen.getId());
-        registerDetailUpdate(vm.getId(), "id_producto", chosen.getId());
+        registerDetailUpdate(vm, "id_producto", chosen.getId());
+    }
+    
+    @FXML
+    public void handleAddSale() {
+        if (availableClients.isEmpty()) {
+            AlertUtils.showError("No hay clientes cargados. Recargue la vista.");
+            return;
+        }
+        
+        SaleHeaderFormData data = SaleHeaderFormController.showForm(salesTable.getScene().getWindow(), availableClients);
+        
+        if (data == null) return;
+        
+        SaleHeader header = new SaleHeader();
+        header.setId(UUID.randomUUID());
+        header.setBillNumber(data.billNumber);
+        header.setDate(Date.valueOf(data.date));
+        header.setClientId(data.client.getId());
+        header.setPaymentMethod(data.paymentMethod);
+        header.setTotal(0f);
+        
+        try {
+            header.setLoadedBy(SessionContext.getCurrentUserId());
+        } catch (IllegalStateException ex) {
+            //Sin sesión activa no se asigna usuario
+        }
+         
+        SaleViewModel vm = new SaleViewModel(new HeaderSaleWithClient(header, data.client.getCompanyName()));
+        vm.setIsNew(true);
+        
+        saleViewModels.add(vm);
+        
+        salesTable.getSelectionModel().select(vm);
+        salesTable.scrollTo(vm);
+        //persistHeader(header, data.client.getCompanyName());
+    }
+    
+    @FXML
+    public void handleAddDetail() {
+        if (currentSale == null) {
+            AlertUtils.showError("Seleccione una venta antes de agregar ítems.");
+            return;
+        }
+        
+        if (avaibleProducts.isEmpty()) {
+            AlertUtils.showError("No hay productos disponibles. Recargue la vista.");
+            return;
+        }
+        
+        SaleDetailFormData data = SaleDetailFormController.showForm(
+                detailTable.getScene().getWindow(),
+                avaibleProducts,
+                currentSale.getBillNumber()
+        );
+        
+        if (data == null) return;
+        
+        SaleDetail detail = new SaleDetail();
+        detail.setId(UUID.randomUUID());
+        detail.setSaleId(currentSale.getId());
+        detail.setProductId(data.product.getId());
+        detail.setUnitPrice(data.unitPrice);
+        detail.setAmmount(data.ammount);
+        detail.setSubtotal(data.subtotal);
+        
+        DetailSaleViewModel vm = new DetailSaleViewModel(new DetailSaleWithProduct(detail, data.product.getName()));
+        vm.setIsNew(true);
+        
+        detailViewModels.add(vm);
+        recalculateTotal(detail.getSaleId());
+        
+        //persistDetail(detail, data.product.getName());
     }
     
     private void handleDateEdit(TableColumn.CellEditEvent<SaleViewModel, LocalDate> e) {
@@ -364,7 +448,7 @@ public class SalesController {
         }
         
         vm.dateProperty().set(Date.valueOf(newValue));
-        registerHeaderUpdate(vm.getId(), "fecha", Date.valueOf(newValue));
+        registerHeaderUpdate(vm, "fecha", Date.valueOf(newValue));
     }
     
     private void handleHeaderStringEdit(TableColumn.CellEditEvent<SaleViewModel, String> e, String dbField) {
@@ -386,7 +470,7 @@ public class SalesController {
         
         SaleViewModel vm = e.getRowValue();
         vm.billNumberProperty().set(newValue);
-        registerHeaderUpdate(vm.getId(), dbField, newValue);
+        registerHeaderUpdate(vm, dbField, newValue);
     }
     
     private void handlePaymentMethodEdit(TableColumn.CellEditEvent<SaleViewModel, PaymentMethod> e) {
@@ -398,7 +482,7 @@ public class SalesController {
         SaleViewModel vm = e.getRowValue();
         vm.paymentMethodProperty().set(newValue);
         
-        registerHeaderUpdate(vm.getId(), "metodo_pago", newValue.name());
+        registerHeaderUpdate(vm, "metodo_pago", newValue.name());
     }
     
     private void handleDetailNumberEdit(TableColumn.CellEditEvent<DetailSaleViewModel, Number> e) {
@@ -410,15 +494,19 @@ public class SalesController {
         DetailSaleViewModel vm = e.getRowValue();
         String columnName = e.getTableColumn().getUserData().toString();
         
-        registerDetailUpdate(vm.getId(), columnName, newValue);
+        registerDetailUpdate(vm, columnName, newValue);
     }
     
-    private void registerHeaderUpdate(UUID id, String field, Object value) {
-        headersToUpdate.computeIfAbsent(id, k -> new HashMap<>()).put(field, value);
+    private void registerHeaderUpdate(SaleViewModel vm, String field, Object value) {
+        if (!vm.getIsNew()) {
+            headersToUpdate.computeIfAbsent(vm.getId(), k -> new HashMap<>()).put(field, value);   
+        }
     }
     
-    private void registerDetailUpdate(UUID id, String field, Object value) {
-        detailsToUpdate.computeIfAbsent(id, k -> new HashMap<>()).put(field, value);
+    private void registerDetailUpdate(DetailSaleViewModel vm, String field, Object value) {
+        if (!vm.getIsNew()) {
+            detailsToUpdate.computeIfAbsent(vm.getId(), k -> new HashMap<>()).put(field, value);    
+        }
     }
     
     private void recalculateTotal(UUID saleId) {
@@ -434,7 +522,7 @@ public class SalesController {
     
         currentSale.totalProperty().set(total);
         
-        registerHeaderUpdate(saleId, "total", total);
+        registerHeaderUpdate(saleViewModels.filtered(s -> s.getId().equals(saleId)).get(0), "total", total);
     }
     
     private void loadClients() {
@@ -547,7 +635,21 @@ public class SalesController {
     
     @FXML
     public void handleSaveChanges() {
-        if (headersToUpdate.isEmpty() && detailsToUpdate.isEmpty()) {
+        //Obtener nuevas ventas e items
+        List<SaleHeader> newHeaders = saleViewModels.stream()
+                .filter(SaleViewModel::getIsNew)
+                .map(SaleViewModel::getHeader)
+                .collect(Collectors.toList());
+        
+        List<SaleDetail> newDetails = detailViewModels.stream()
+                .filter(DetailSaleViewModel::getIsNew)
+                .map(DetailSaleViewModel::getDetail)
+                .collect(Collectors.toList());
+        
+        
+        if (headersToUpdate.isEmpty() && detailsToUpdate.isEmpty() &&
+                headersToDelete.isEmpty() && detailsToDelete.isEmpty() &&
+                newHeaders.isEmpty() && newDetails.isEmpty()) {
             AlertUtils.showError("No hay cambios pendientes para guardar.");
             return;
         }
@@ -558,32 +660,41 @@ public class SalesController {
  
         confirm.ifPresent(btn -> {
             if (btn == ButtonType.OK) {
-                saveData();
+                saveData(newHeaders, newDetails);
             }
         });
     }
     
-    private void saveData() {
+    private void saveData(List<SaleHeader> newHeaders, List<SaleDetail> newDetails) {
         if (saleSaveService.isRunning()) return;
  
         saleSaveService.reset();
-        saleSaveService.setData(
-                new HashMap<>(headersToUpdate),
-                new HashMap<>(detailsToUpdate));
+        
+        saleSaveService.setData(newHeaders, newDetails, headersToUpdate, detailsToUpdate, headersToDelete, detailsToDelete);
  
         int totalHeaders = headersToUpdate.size();
         int totalDetails = detailsToUpdate.size();
+        int totalNewHeaders = newHeaders.size();
+        int totalNewDetails = newDetails.size();
+        int totalRemovedHeaders = headersToDelete.size();
+        int totalRemovedItems = detailsToDelete.size();
  
         saleSaveService.setOnSucceeded(e -> {
             headersToUpdate.clear();
             detailsToUpdate.clear();
+            headersToDelete.clear();
+            detailsToDelete.clear();
  
             AlertUtils.showSuccess(
                     "Operación exitosa",
                     "Cambios guardados con éxito",
-                    "Ventas (cabecera) actualizadas: " + totalHeaders
-                    + "\nÍtems de detalle actualizados: " + totalDetails);
- 
+                    "Ventas (cabecera) creadas: " + totalNewHeaders 
+                    + "\nVentas (cabecera) actualizadas: " + totalHeaders
+                    + "\nVentas (cabecera) eliminadas: " + totalRemovedHeaders
+                    + "\nÍtems de detalle creados: " + totalNewDetails
+                    + "\nÍtems de detalle actualizados: " + totalDetails
+                    + "\nÍtems de detalle eliminados: " + totalRemovedItems);
+            
             loadHeaders();
         });
  

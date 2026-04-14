@@ -82,7 +82,7 @@ public class SaleDAOImpl implements SaleDAO {
 
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    SaleDetail detail = mapResultSetToDetalle(rs);
+                    SaleDetail detail = mapResultSetToDetail(rs);
                     String productName = rs.getString("producto_nombre");
                     result.add(new DetailSaleWithProduct(detail, productName));
                 }
@@ -175,6 +175,169 @@ public class SaleDAOImpl implements SaleDAO {
         
     }
 
+    @Override
+    public UUID insertHeader(SaleHeader header) {
+        String sql = "INSERT INTO app.ventas_cabecera "
+                + "(id, numero_factura, fecha, id_cliente, total, metodo_pago, cargado_por) "
+                + "VALUES(?,?,?,?,0,?::app.e_metodo_pago, ?) "
+                + "RETURNING id";
+        
+        try (Connection conn = DatabaseManager.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            UUID newId = UUID.randomUUID();
+            stmt.setObject(1, header.getId() == null ? newId : header.getId());
+            stmt.setString(2, header.getBillNumber().trim().toLowerCase());
+            stmt.setDate(3, header.getDate());
+            stmt.setObject(4, header.getClientId());
+            stmt.setString(5, header.getPaymentMethod().name());
+            stmt.setObject(6, header.getLoadedBy());
+            
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return (UUID) rs.getObject(1);
+                }
+            }
+            
+            throw new DataAccessException("No se pudo obtener el ID generado para la cabecera.", null); 
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            throw new DataAccessException("Error al insertar cabecera de venta.", ex);
+        }
+    }
+
+    @Override
+    public UUID insertDetail(SaleDetail detail) {
+        String insertSql = "INSERT INTO app.ventas_detalle "
+                + "(id, id_venta, id_producto, precio_unitario, subtotal, cantidad) "
+                + "VALUES (?, ?, ?, ?, ?, ?) "
+                + "RETURNING id";
+ 
+        String updateTotalSql = "UPDATE app.ventas_cabecera "
+                + "SET total = (SELECT COALESCE(SUM(subtotal), 0) "
+                + "             FROM app.ventas_detalle "
+                + "             WHERE id_venta = ?) "
+                + "WHERE id = ?";
+ 
+        Connection conn = null;
+        try {
+            conn = DatabaseManager.getConnection();
+            conn.setAutoCommit(false);
+ 
+            UUID newId;
+            UUID detailId = UUID.randomUUID();
+ 
+            try (PreparedStatement stmt = conn.prepareStatement(insertSql)) {
+                stmt.setObject(1, detailId);
+                stmt.setObject(2, detail.getSaleId());
+                stmt.setObject(3, detail.getProductId());
+                stmt.setFloat(4, detail.getUnitPrice());
+                stmt.setFloat(5, detail.getSubtotal());
+                stmt.setInt(6, detail.getAmmount());
+ 
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (rs.next()) {
+                        newId = (UUID) rs.getObject(1);
+                    } else {
+                        throw new DataAccessException(
+                                "No se pudo obtener el ID generado para el ítem.", null);
+                    }
+                }
+            }
+ 
+            // Recalcular total de la cabecera
+            try (PreparedStatement stmt = conn.prepareStatement(updateTotalSql)) {
+                stmt.setObject(1, detail.getSaleId());
+                stmt.setObject(2, detail.getSaleId());
+                stmt.executeUpdate();
+            }
+ 
+            conn.commit();
+            return newId;
+ 
+        } catch (SQLException ex) {
+            if (conn != null) {
+                try { conn.rollback(); } catch (SQLException rb) {
+                    System.err.println("Error en rollback: " + rb.getMessage());
+                }
+            }
+            ex.printStackTrace();
+            throw new DataAccessException("Error al insertar ítem de venta.", ex);
+        } finally {
+            if (conn != null) {
+                try { conn.setAutoCommit(true); conn.close(); } catch (SQLException ex) {
+                    System.err.println("Error al cerrar conexión: " + ex.getMessage());
+                }
+            }
+        }
+    }
+
+    @Override
+    public void deleteHeader(UUID saleId) {
+        String sql = "DELETE FROM app.ventas_cabecera WHERE id = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setObject(1, saleId);
+            stmt.executeUpdate();
+        } catch (SQLException ex) {
+            throw new DataAccessException("Error al eliminar venta: " + saleId.toString(), ex);
+        }
+    }
+
+    @Override
+    public void deleteDetail(UUID detailId) {
+        String sql = "DELETE FROM app.ventas_detalle WHERE id = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setObject(1, detailId);
+            stmt.executeUpdate();
+        } catch (SQLException ex) {
+            throw new DataAccessException("Error al eliminar ítem de venta: " + detailId.toString(), ex);
+        }
+    }
+
+    @Override
+    public SaleHeader findSaleById(UUID saleId) {
+        SaleHeader sale = new SaleHeader();
+        String sql = "SELECT * FROM app.ventas_cabecera WHERE id = ?";
+        
+        try (Connection conn = DatabaseManager.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setObject(1, saleId);
+            
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    sale = mapResultSetToHeader(rs);
+                }
+            }
+        } catch (SQLException ex) {
+            throw new DataAccessException("Error al obtener venta con id: " + saleId.toString(), ex);
+        }
+        
+        return sale;
+    }
+
+    @Override
+    public SaleDetail findDetailById(UUID detailId) {
+        SaleDetail detail = new SaleDetail();
+        String sql = "SELECT * FROM app.ventas_detalle WHERE id = ?";
+        
+        try (Connection conn = DatabaseManager.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setObject(1, detailId);
+            
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    detail = mapResultSetToDetail(rs);
+                }
+            }
+        } catch (SQLException ex) {
+            throw new DataAccessException("Erro al obtener item con id: " + detailId.toString(), ex);
+        }
+        
+        return detail;
+    }
+    
     private SaleHeader mapResultSetToHeader(ResultSet rs) throws SQLException {
         SaleHeader vc = new SaleHeader();
         vc.setId((UUID) rs.getObject("id"));
@@ -187,7 +350,7 @@ public class SaleDAOImpl implements SaleDAO {
         return vc;
     }
 
-    private SaleDetail mapResultSetToDetalle(ResultSet rs) throws SQLException {
+    private SaleDetail mapResultSetToDetail(ResultSet rs) throws SQLException {
         SaleDetail vd = new SaleDetail();
         vd.setId((UUID) rs.getObject("id"));
         vd.setSaleId((UUID) rs.getObject("id_venta"));

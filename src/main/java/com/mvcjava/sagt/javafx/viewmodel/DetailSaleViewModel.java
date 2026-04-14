@@ -30,7 +30,10 @@ public class DetailSaleViewModel {
     private final DetailSaleWithProduct source;
     private final SaleDetail detail;
     
+    private boolean isNew;
+    
     public DetailSaleViewModel(DetailSaleWithProduct dto) {
+        this.isNew = false;
         this.source = dto;
         this.detail = dto.getDetail();
         this.id.set(dto.getDetail().getId());
@@ -59,6 +62,9 @@ public class DetailSaleViewModel {
     public int getAmmount() { return this.ammount.get(); }
     public float getUnitPrice() { return this.unitPrice.get(); }
     public float getSubtotal() { return this.subtotal.get(); }
+    public boolean getIsNew() { return this.isNew; }
+    
+    public void setIsNew(boolean isNew) { this.isNew = isNew; }
     
     public SaleDetail getDetail() { return this.detail; }
     
