@@ -7,9 +7,11 @@ package com.mvcjava.sagt.javafx.viewmodel;
 import com.mvcjava.sagt.javafx.dao.model.SaleDetail;
 import com.mvcjava.sagt.javafx.dto.DetailSaleWithProduct;
 import java.util.UUID;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.FloatProperty;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleFloatProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -26,6 +28,7 @@ public class DetailSaleViewModel {
     private final IntegerProperty ammount = new SimpleIntegerProperty();
     private final FloatProperty unitPrice = new SimpleFloatProperty();
     private final FloatProperty subtotal = new SimpleFloatProperty();
+    private final BooleanProperty selected = new SimpleBooleanProperty(false);
     
     private final DetailSaleWithProduct source;
     private final SaleDetail detail;
@@ -56,6 +59,7 @@ public class DetailSaleViewModel {
     public IntegerProperty ammountProperty() { return this.ammount; }
     public FloatProperty unitPriceProperty() { return this.unitPrice; }
     public FloatProperty subtotalProperty() { return this.subtotal; }
+    public BooleanProperty selectedProperty() { return this.selected; }
     
     public UUID getId() { return this.id.get(); }
     public String getProductName() { return this.productName.get(); }
@@ -63,6 +67,7 @@ public class DetailSaleViewModel {
     public float getUnitPrice() { return this.unitPrice.get(); }
     public float getSubtotal() { return this.subtotal.get(); }
     public boolean getIsNew() { return this.isNew; }
+    public boolean isSelected() { return this.selected.get(); }
     
     public void setIsNew(boolean isNew) { this.isNew = isNew; }
     

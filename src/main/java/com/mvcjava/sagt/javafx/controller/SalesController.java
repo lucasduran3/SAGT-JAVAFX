@@ -47,6 +47,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.ComboBoxTableCell;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.layout.HBox;
@@ -64,8 +65,11 @@ public class SalesController {
     private TableView<DetailSaleViewModel> detailTable;
     @FXML
     private Button addDetailBtn;
+    @FXML
+    private Button deleteDetailBtn;
     
     //Columnas Master
+    private TableColumn<SaleViewModel, Boolean> selectSaleColumn;
     private TableColumn<SaleViewModel, String> colBillNumber;
     private TableColumn<SaleViewModel, LocalDate> colDate;
     private TableColumn<SaleViewModel, String> colClient;
@@ -73,6 +77,7 @@ public class SalesController {
     private TableColumn<SaleViewModel, PaymentMethod> colPaymentMethod;
     
     //Columnas Detail
+    private TableColumn<DetailSaleViewModel, Boolean> selectDetailColumn;
     private TableColumn<DetailSaleViewModel, String> colProduct;
     private TableColumn<DetailSaleViewModel, Number> colAmmount;
     private TableColumn<DetailSaleViewModel, Number> colUnitPrice;
@@ -132,10 +137,12 @@ public class SalesController {
                     if (newVal != null) {
                         currentSale = newVal;
                         addDetailBtn.setDisable(false);
+                        deleteDetailBtn.setDisable(false);
                         loadProducts(newVal.getId(), newVal.getBillNumber());
                     } else {
                         currentSale = null;
                         addDetailBtn.setDisable(true);
+                        deleteDetailBtn.setDisable(true);
                         detailViewModels.clear();
                         detailsLabel.setText("Selecciona una venta para ver su detalle");
                     }
@@ -145,6 +152,14 @@ public class SalesController {
     }
     
     private void setupMasterColumns() {
+        selectSaleColumn = new TableColumn<>("");
+        selectSaleColumn.setCellValueFactory(cellData -> cellData.getValue().selectedProperty());
+        selectSaleColumn.setCellFactory(col -> new CheckBoxTableCell<>());
+        selectSaleColumn.setEditable(true);
+        selectSaleColumn.setResizable(false);
+        selectSaleColumn.setMaxWidth(50);
+        selectSaleColumn.setMinWidth(50);
+        
         colBillNumber = new TableColumn<>("Nº Factura");
         colBillNumber.setPrefWidth(150);
         colBillNumber.setEditable(true);
@@ -219,11 +234,18 @@ public class SalesController {
         colPaymentMethod.setOnEditCommit(this::handlePaymentMethodEdit);
  
         salesTable.getColumns().addAll(
-                colBillNumber, colDate, colClient, colTotal, colPaymentMethod);
+                selectSaleColumn, colBillNumber, colDate, colClient, colTotal, colPaymentMethod);
     }
     
     private void setupDetailColumns() {
-        // Producto – solo lectura por ahora
+        selectDetailColumn = new TableColumn<>("");
+        selectDetailColumn.setCellValueFactory(cellData -> cellData.getValue().selectedProperty());
+        selectDetailColumn.setCellFactory(col -> new CheckBoxTableCell<>());
+        selectDetailColumn.setEditable(true);
+        selectDetailColumn.setResizable(false);
+        selectDetailColumn.setMaxWidth(50);
+        selectDetailColumn.setMinWidth(50);
+        
         colProduct = new TableColumn<>("Producto");
         colProduct.setUserData("id_producto");
         colProduct.setPrefWidth(240);
@@ -302,7 +324,7 @@ public class SalesController {
         colSubtotal.setCellValueFactory(data -> data.getValue().subtotalProperty());
  
         detailTable.getColumns().addAll(
-                colProduct, colAmmount, colUnitPrice, colSubtotal);
+                selectDetailColumn,colProduct, colAmmount, colUnitPrice, colSubtotal);
     }
     
     private void openClientSelectDialog(SaleViewModel vm) {
@@ -665,6 +687,42 @@ public class SalesController {
         });
     }
     
+    @FXML
+    public void handleDeleteSale() {
+        Optional<ButtonType> btn = AlertUtils.showConfirmAlert("Eliminar venta", 
+                "Desea eliminar las ventas seleccionadas?\nLas ventas sin guardar no se podrán recuperar.");
+        
+        btn.ifPresent(p -> {
+            if (p == ButtonType.OK) {
+                List<SaleViewModel> selected = saleViewModels.stream().filter(s -> s.isSelected()).collect(Collectors.toList());
+                
+                for (SaleViewModel sale : selected) {
+                    headersToDelete.add(sale.getId());
+                    saleViewModels.remove(sale);
+                }
+            }
+        });
+    }
+    
+    @FXML
+    public void handleDeleteDetail() {
+        Optional<ButtonType> btn = AlertUtils.showConfirmAlert("Eliminar ítem de detalle",
+                "Desea eliminar los ítems seleccionados?\nLos items sin guardar no se podrán recuperar.");
+        
+        btn.ifPresent(p -> {
+            if (p == ButtonType.OK) {
+                List<DetailSaleViewModel> selected = detailViewModels.stream().filter(s -> s.isSelected()).collect(Collectors.toList());
+                
+                for (DetailSaleViewModel detail : selected) {
+                    detailsToDelete.add(detail.getId());
+                    detailViewModels.remove(detail);
+                }
+                
+                recalculateTotal(currentSale.getId());
+            }
+        });
+    }
+    
     private void saveData(List<SaleHeader> newHeaders, List<SaleDetail> newDetails) {
         if (saleSaveService.isRunning()) return;
  
@@ -691,6 +749,7 @@ public class SalesController {
                     "Ventas (cabecera) creadas: " + totalNewHeaders 
                     + "\nVentas (cabecera) actualizadas: " + totalHeaders
                     + "\nVentas (cabecera) eliminadas: " + totalRemovedHeaders
+                    +"\n"
                     + "\nÍtems de detalle creados: " + totalNewDetails
                     + "\nÍtems de detalle actualizados: " + totalDetails
                     + "\nÍtems de detalle eliminados: " + totalRemovedItems);

@@ -27,6 +27,7 @@
         <Button text="Agregar venta"   styleClass="btnPrimary" onAction="#handleAddSale"/>
         <Button text="Recargar"        styleClass="btnWarning" onAction="#handleReload"/>
         <Button text="Guardar cambios" styleClass="btnSuccess" onAction="#handleSaveChanges"/>
+        <Button text="Eliminar" styleClass="btnDanger" onAction="#handleDeleteSale"/>
     </HBox>
 
     <SplitPane orientation="VERTICAL" VBox.vgrow="ALWAYS" dividerPositions="0.5">
@@ -60,6 +61,12 @@
                         text="Agregar ítem"
                         styleClass="btnPrimary"
                         onAction="#handleAddDetail"
+                        disable="true"/>
+                
+                <Button fx:id="deleteDetailBtn"
+                        text="Eliminar ítem"
+                        styleClass="btnDanger"
+                        onAction="#handleDeleteDetail"
                         disable="true"/>
             </HBox>
 
