@@ -11,6 +11,7 @@ import com.mvcjava.sagt.javafx.exception.BusinessException;
 import com.mvcjava.sagt.javafx.service.interfaces.SupplierService;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
@@ -89,4 +90,21 @@ public class SupplierServiceImpl implements SupplierService {
         
         supplierDAO.updateSupplier(id, updates);
     }
+
+    @Override
+    public void saveChanges(List<Supplier> newSuppliers, Map<UUID, Map<String, Object>> suppliersToUpdate, List<Supplier> suppliersToDelete) throws BusinessException{
+        for (Map.Entry<UUID, Map<String, Object>> entry: suppliersToUpdate.entrySet()) {
+            updateSupplier(entry.getKey(), entry.getValue());
+        }
+        
+        for (Supplier supplier : newSuppliers) {
+            createSupplier(supplier);
+        }
+        
+        for (Supplier supplier : suppliersToDelete) {
+            deleteSupplier(supplier.getId());
+        }
+    }
+    
+    
 }

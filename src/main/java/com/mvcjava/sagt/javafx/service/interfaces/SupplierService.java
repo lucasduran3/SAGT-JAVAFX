@@ -9,6 +9,7 @@ import com.mvcjava.sagt.javafx.dao.model.Supplier;
 import com.mvcjava.sagt.javafx.exception.BusinessException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  *
@@ -20,4 +21,5 @@ public interface SupplierService {
     void createSupplier(Supplier supplier) throws BusinessException;
     void updateSupplier(UUID id, Map<String, Object> updates) throws BusinessException;
     void deleteSupplier(UUID id) throws BusinessException;
+    void saveChanges(List<Supplier> newClients, Map<UUID, Map<String, Object>> suppliersToUpdate, List<Supplier> clientsToDelete) throws BusinessException;
 }
