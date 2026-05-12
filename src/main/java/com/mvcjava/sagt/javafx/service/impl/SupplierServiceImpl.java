@@ -9,11 +9,10 @@ import com.mvcjava.sagt.javafx.dao.interfaces.SupplierDAO;
 import com.mvcjava.sagt.javafx.dao.model.Supplier;
 import com.mvcjava.sagt.javafx.exception.BusinessException;
 import com.mvcjava.sagt.javafx.service.interfaces.SupplierService;
+import com.mvcjava.sagt.javafx.util.BasicStringValidator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
-import java.util.regex.Pattern;
 
 /**
  *
@@ -35,17 +34,15 @@ public class SupplierServiceImpl implements SupplierService {
     public void createSupplier(Supplier supplier) throws BusinessException {
         boolean alreadyExists = supplierDAO.alreadyExists(supplier.getName(), supplier.getPhone());
         
-        Pattern phonePattern = Pattern.compile("^\\d{8,12}$");
-        boolean validPhone = phonePattern.matcher(supplier.getPhone()).matches();
-        Pattern emailPattern = Pattern.compile("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\\\.[A-Z]{2,6}$");
-        boolean validEmail = emailPattern.matcher(supplier.getEmail()).matches();
-        
         if (alreadyExists) {
             throw new BusinessException("Este proveedor ya existe.");
-        } else if (!validPhone) {
-            throw new BusinessException("El numero telefono no tiene el formato correcto.");
-        } else if (!validEmail) {
-            throw new BusinessException("El email no tiene el formato correcto");
+        }
+        
+        if (!BasicStringValidator.isValidPhone(supplier.getPhone())) {
+            throw new BusinessException("Número de teléfono inválido.");
+        }
+        if (!BasicStringValidator.isValidEmail(supplier.getEmail())) {
+            throw new BusinessException("Dirección de email inválida.");
         }
         
         supplierDAO.addSupplier(supplier);
@@ -71,6 +68,18 @@ public class SupplierServiceImpl implements SupplierService {
         Supplier currentSupplier = supplierDAO.getSupplier(id);
         if (currentSupplier == null) {
             throw new BusinessException("El proveedor que desea actualizar no existe.");
+        }
+        
+        //Validaciones
+        if (updates.containsKey("telefono")) {
+            if(!BasicStringValidator.isValidPhone(updates.get("telefono").toString())) {
+                throw new BusinessException("Número de teléfono inválido.");
+            }
+        }
+        if (updates.containsKey(("email"))) {
+            if (!BasicStringValidator.isValidEmail((updates.get("email").toString()))) {
+                throw new BusinessException("Dirección de email inválida.");
+            }
         }
         
         String newName = updates.containsKey("nombre") ? (String) updates.get("nombre")
@@ -105,6 +114,4 @@ public class SupplierServiceImpl implements SupplierService {
             deleteSupplier(supplier.getId());
         }
     }
-    
-    
 }

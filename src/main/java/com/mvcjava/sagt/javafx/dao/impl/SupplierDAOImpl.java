@@ -114,11 +114,11 @@ public class SupplierDAOImpl implements SupplierDAO{
         
         if (updates.isEmpty()) return;
         
-        StringBuilder sql = new StringBuilder("UPDATE app.proveedores SET");
+        StringBuilder sql = new StringBuilder("UPDATE app.proveedores SET ");
         int idx = 0;
         for (Map.Entry<String, Object> e : updates.entrySet()) {
             if (idx++ > 0) sql.append(", ");
-            sql.append(e.getKey()).append(" = ?");
+            sql.append(e.getKey()).append(" = ? ");
         }
         sql.append(" WHERE id = ?");
         
@@ -134,6 +134,7 @@ public class SupplierDAOImpl implements SupplierDAO{
             stmt.executeUpdate();
             
         } catch (SQLException ex) {
+            ex.printStackTrace();
             throw new DataAccessException("Error al actualizar el proveedor con id: " + id.toString(), ex);
         }
     }

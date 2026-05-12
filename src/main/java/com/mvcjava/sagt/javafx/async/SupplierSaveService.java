@@ -28,7 +28,7 @@ public class SupplierSaveService extends Service<Void>{
         this.supplierService = new SupplierServiceImpl();
     }
     
-    public void setData(List<Supplier> newSuppliers, Map<UUID, Map<String, Object>> suppliersToUpdate, List<Supplier> suppliersToDelte) {
+    public void setData(List<Supplier> newSuppliers, Map<UUID, Map<String, Object>> suppliersToUpdate, List<Supplier> suppliersToDelete) {
         this.newSuppliers = newSuppliers;
         this.suppliersToUpdate = suppliersToUpdate;
         this.suppliersToDelete = suppliersToDelete;

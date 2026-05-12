@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<DialogPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            prefWidth="520">
+
+    <headerText>Crear Proveedor</headerText>
+
+    <content>
+        <VBox spacing="20">
+            <padding>
+                <Insets top="10" right="10" bottom="10" left="10"/>
+            </padding>
+
+            <Label text="Complete todos los campos para crear un proveedor.&#10;Los campos con * son obligatorios."
+                   wrapText="true"/>
+
+            <GridPane hgap="20" vgap="14">
+                <columnConstraints>
+                    <ColumnConstraints percentWidth="50" hgrow="ALWAYS"/>
+                    <ColumnConstraints percentWidth="50" hgrow="ALWAYS"/>
+                </columnConstraints>
+
+                <!-- Nombre -->
+                <VBox spacing="5" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                    <Label text="* Nombre"/>
+                    <TextField fx:id="nameField"/>
+                    <Label fx:id="errorName" style="-fx-text-fill: #E63946; -fx-font-size: 11px;"/>
+                </VBox>
+
+                <!-- Teléfono -->
+                <VBox spacing="5" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                    <Label text="* Teléfono"/>
+                    <TextField fx:id="phoneField" promptText="Solo números, sin espacios"/>
+                    <Label fx:id="errorPhone" style="-fx-text-fill: #E63946; -fx-font-size: 11px;"/>
+                </VBox>
+
+                <!-- Email -->
+                <VBox spacing="5" GridPane.columnIndex="0" GridPane.rowIndex="1" GridPane.columnSpan="2">
+                    <Label text="* Email"/>
+                    <TextField fx:id="emailField"/>
+                    <Label fx:id="errorEmail" style="-fx-text-fill: #E63946; -fx-font-size: 11px;"/>
+                </VBox>
+
+                <!-- Dirección -->
+                <VBox spacing="5" GridPane.columnIndex="0" GridPane.rowIndex="2" GridPane.columnSpan="2">
+                    <Label text="* Dirección"/>
+                    <TextField fx:id="addressField"/>
+                    <Label fx:id="errorAddress" style="-fx-text-fill: #E63946; -fx-font-size: 11px;"/>
+                </VBox>
+
+                <!-- Web -->
+                <VBox spacing="5" GridPane.columnIndex="0" GridPane.rowIndex="3" GridPane.columnSpan="2">
+                    <Label text="* Sitio web"/>
+                    <TextField fx:id="webField" promptText="Ej: www.proveedor.com"/>
+                    <Label fx:id="errorWeb" style="-fx-text-fill: #E63946; -fx-font-size: 11px;"/>
+                </VBox>
+
+                <!-- Localidad -->
+                <VBox spacing="5" GridPane.columnIndex="0" GridPane.rowIndex="4">
+                    <Label text="* Localidad"/>
+                    <TextField fx:id="locationField"/>
+                    <Label fx:id="errorLocation" style="-fx-text-fill: #E63946; -fx-font-size: 11px;"/>
+                </VBox>
+
+                <!-- Provincia -->
+                <VBox spacing="5" GridPane.columnIndex="1" GridPane.rowIndex="4">
+                    <Label text="* Provincia"/>
+                    <TextField fx:id="provinceField"/>
+                    <Label fx:id="errorProvince" style="-fx-text-fill: #E63946; -fx-font-size: 11px;"/>
+                </VBox>
+
+            </GridPane>
+        </VBox>
+    </content>
+
+    <buttonTypes>
+        <ButtonType fx:constant="OK"/>
+        <ButtonType fx:constant="CANCEL"/>
+    </buttonTypes>
+
+</DialogPane>

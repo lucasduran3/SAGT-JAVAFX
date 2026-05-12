@@ -23,14 +23,14 @@
         <TextField promptText="Buscar ...." prefWidth="250" styleClass="searchInput"/>
         <Region HBox.hgrow="ALWAYS" />
                             
-        <Button text="Agregar Proveedor" styleClass="btnPrimary" onAction="#handleAddClient"/>
-        <Button text="Eliminar" styleClass="btnDanger" onAction="#handleDeleteClient"/>
+        <Button text="Agregar Proveedor" styleClass="btnPrimary" onAction="#handleAddSupplier"/>
+        <Button text="Eliminar" styleClass="btnDanger" onAction="#handleDeleteSupplier"/>
         <Button text="Guardar cambios" styleClass="btnSuccess" onAction="#handleSaveChanges"/>
         <Button text="Recargar" styleClass="btnWarning"/>
         <Button text="Filtrar" styleClass="ghostBtn"/>
     </HBox>
 
-    <TableView fx:id="supplierTable" VBox.vgrow="ALWAYS">
+    <TableView fx:id="suppliersTable" VBox.vgrow="ALWAYS">
         <columns>
         </columns>
     </TableView>
