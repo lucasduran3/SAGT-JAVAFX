@@ -12,9 +12,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -22,7 +21,7 @@ import java.util.UUID;
  *
  * @author lucas
  */
-public class CategoryDAOImpl implements CategoryDAO{
+public class CategoryDAOImpl implements CategoryDAO {
 
     @Override
     public Set<Category> findAll() {
@@ -43,5 +42,98 @@ public class CategoryDAOImpl implements CategoryDAO{
         
         return categories;
     }
+
+    @Override
+    public Category findById(UUID id) {
+        Category category = new Category();
+        String sql = "SELECT * FROM app.categorias WHERE id = ?";
+        
+        try (Connection conn = DatabaseManager.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setObject(1, id);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    category.setId((UUID)rs.getObject("id"));
+                    category.setName(rs.getString("nombre"));
+                }
+            }
+        } catch (SQLException ex) {
+            throw new DataAccessException("Error al obtener categoría con id: " + id.toString(), ex);
+        }
+        
+        return category;
+    }
+
+    @Override
+    public void updateCategory(UUID id, Map<String, Object> updates) {
+        if (updates == null || updates.isEmpty()) return;
+        
+        updates.values().removeIf(t -> t == null);
+        if (updates.isEmpty()) return;
+        
+        StringBuilder sql = new StringBuilder("UPDATE app.categorias SET ");
+        int idx = 0;
+        for (Map.Entry<String, Object> e : updates.entrySet()) {
+            if (idx++ > 0) sql.append(", ");
+            sql.append(e.getKey()).append(" = ? ");
+            
+        }
+        sql.append(" WHERE id = ? ");
+        
+        try (Connection conn = DatabaseManager.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
+            int i = 1;
+            for (Object p : updates.values()) {
+                stmt.setObject(i++, p);
+            }
+            stmt.setObject(i, id);
+            
+            stmt.executeUpdate();
+        } catch (SQLException ex) {
+            throw new DataAccessException("Error al actualizar categoría: " + id, ex);
+        }
+    }
+
+    @Override
+    public void addCategory(Category category) {
+        String sql = "INSERT INTO app.categorias (nombre) VALUES (?, ?)";
+        try (Connection conn = DatabaseManager.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setObject(1, category.getName());
+        } catch (SQLException ex) {
+            throw new DataAccessException("Error al añadir categoria: " + category.getName(), ex);
+        }
+    }
+
+    @Override
+    public void deleteCategory(UUID id) {
+        String sql = "DELETE FROM app.categorias WHERE id = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setObject(1, id);
+            stmt.executeUpdate();
+        } catch (SQLException ex) {
+            throw new DataAccessException("Error al eliminar categoría con id: " + id, ex);
+        }
+    }
+
+    @Override
+    public boolean alreadyExists(UUID id, String name) {
+        String sql = "SELECT 1 FROM app.categorias WHERE nombre = ? AND id <> ? LIMIT 1";
+        
+        try (Connection conn = DatabaseManager.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, name);
+            stmt.setObject(2, id);
+            
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException ex) {
+            throw new DataAccessException("Error al verificar existencia de categoría: " + id, ex);
+        }
+    }
+    
+    
     
 }

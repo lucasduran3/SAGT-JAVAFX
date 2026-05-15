@@ -23,14 +23,16 @@ public class Category {
         setName(name);
     }
     
-    private void setId(UUID id) {
+    public Category() {}
+    
+    public void setId(UUID id) {
         if (id == null) {
             throw new IllegalArgumentException("El id de categoria no puede ser null.");
         }
         this.id = id;
     }
     
-    private void setName(String name) {
+    public void setName(String name) {
         stringValidator.validate(name, 3, 30, "nombre_categoria");
         this.name = name.trim().toLowerCase();
     }
