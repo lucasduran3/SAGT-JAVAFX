@@ -36,7 +36,6 @@ import javafx.scene.control.cell.TextFieldTableCell;
  * @author lucas
  */
 public class ClientController {
-
     @FXML
     private TableView<ClientViewModel> clientsTable;
 

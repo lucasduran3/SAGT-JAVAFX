@@ -5,7 +5,6 @@
 package com.mvcjava.sagt.javafx.dao.interfaces;
 
 import com.mvcjava.sagt.javafx.dao.model.Category;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -17,7 +16,7 @@ public interface CategoryDAO {
     Category findById(UUID id);
     Set<Category> findAll();
     void addCategory(Category category);
-    void updateCategory(UUID id, Map<String, Object> updates);
+    void updateCategory(Category category);
     void deleteCategory(UUID id);
     boolean alreadyExists(UUID id, String name);
 }

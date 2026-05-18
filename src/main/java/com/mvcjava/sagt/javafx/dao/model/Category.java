@@ -14,10 +14,8 @@ import java.util.UUID;
 public class Category {
     private UUID id;
     private String name;
-    private BasicStringValidator stringValidator;
     
     public Category(UUID id, String name) {
-        stringValidator = new BasicStringValidator();
                 
         setId(id);
         setName(name);
@@ -33,7 +31,7 @@ public class Category {
     }
     
     public void setName(String name) {
-        stringValidator.validate(name, 3, 30, "nombre_categoria");
+        BasicStringValidator.validate(name, 3, 30, "nombre_categoria");
         this.name = name.trim().toLowerCase();
     }
     

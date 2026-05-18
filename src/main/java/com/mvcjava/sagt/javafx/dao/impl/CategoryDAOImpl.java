@@ -65,32 +65,18 @@ public class CategoryDAOImpl implements CategoryDAO {
     }
 
     @Override
-    public void updateCategory(UUID id, Map<String, Object> updates) {
-        if (updates == null || updates.isEmpty()) return;
+    public void updateCategory(Category category) {
+        if (category == null) return;        
         
-        updates.values().removeIf(t -> t == null);
-        if (updates.isEmpty()) return;
-        
-        StringBuilder sql = new StringBuilder("UPDATE app.categorias SET ");
-        int idx = 0;
-        for (Map.Entry<String, Object> e : updates.entrySet()) {
-            if (idx++ > 0) sql.append(", ");
-            sql.append(e.getKey()).append(" = ? ");
-            
-        }
-        sql.append(" WHERE id = ? ");
+        String sql = "UPDATE app.categorias SET nombre = ? WHERE id = ?";
         
         try (Connection conn = DatabaseManager.getConnection();
                 PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
-            int i = 1;
-            for (Object p : updates.values()) {
-                stmt.setObject(i++, p);
-            }
-            stmt.setObject(i, id);
-            
+            stmt.setObject(1, category.getName());
+            stmt.setObject(2, category.getId());
             stmt.executeUpdate();
         } catch (SQLException ex) {
-            throw new DataAccessException("Error al actualizar categoría: " + id, ex);
+            throw new DataAccessException("Error al actualizar categoría: " + category.getId(), ex);
         }
     }
 
