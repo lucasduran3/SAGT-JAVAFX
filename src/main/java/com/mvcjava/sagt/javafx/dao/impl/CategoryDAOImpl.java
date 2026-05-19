@@ -13,7 +13,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -82,10 +81,12 @@ public class CategoryDAOImpl implements CategoryDAO {
 
     @Override
     public void addCategory(Category category) {
-        String sql = "INSERT INTO app.categorias (nombre) VALUES (?, ?)";
+        String sql = "INSERT INTO app.categorias (id, nombre) VALUES (?, ?)";
         try (Connection conn = DatabaseManager.getConnection();
                 PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setObject(1, category.getName());
+            stmt.setObject(1, category.getId());
+            stmt.setObject(2, category.getName());
+            stmt.executeUpdate();
         } catch (SQLException ex) {
             throw new DataAccessException("Error al añadir categoria: " + category.getName(), ex);
         }
@@ -119,7 +120,4 @@ public class CategoryDAOImpl implements CategoryDAO {
             throw new DataAccessException("Error al verificar existencia de categoría: " + id, ex);
         }
     }
-    
-    
-    
 }

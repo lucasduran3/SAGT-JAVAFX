@@ -116,7 +116,7 @@ public class ClientFormController {
             
         } catch (IOException ex) {
             ex.printStackTrace();
-            AlertUtils.showError("Error al abrir formulario de producto: " + ex.getMessage());
+            AlertUtils.showError("Error al abrir formulario de cliente: " + ex.getMessage());
             return null;
         }
     }

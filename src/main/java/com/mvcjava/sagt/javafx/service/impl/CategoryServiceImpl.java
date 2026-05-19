@@ -36,7 +36,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public void createCategory(Category category) throws BusinessException {
         boolean exists = dao.alreadyExists(category.getId(), category.getName());
-        if(exists) {
+        if (exists) {
             throw new BusinessException("La categoria " + category.getName() + " ya existe.");
         }
         
@@ -72,7 +72,7 @@ public class CategoryServiceImpl implements CategoryService {
         }
         
         for (Category c : categoriesToDelete) {
-            dao.deleteCategory(c.getId());
+            deleteCategory(c.getId());
         }
     }
 }

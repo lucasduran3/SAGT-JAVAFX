@@ -217,7 +217,6 @@ public class ClientController {
             saveService.reset();
             
             Set<Client> newClients = clientViewModels.stream().filter(ClientViewModel::getIsNew).map(ClientViewModel::getModel).collect(Collectors.toSet());
-            System.out.println(newClients.size());
             Set<Client> deleted = clientsToDelete.stream().map(ClientViewModel::getModel).collect(Collectors.toSet());
             
             saveService.setData(newClients, clientsToUpdate, deleted);
@@ -263,7 +262,7 @@ public class ClientController {
     @FXML
     protected void handleDeleteClient() {
         Optional<ButtonType> btn = AlertUtils
-                .showConfirmAlert("Eliminar clientes", "Desea eliminar los clientes seleccionados?"
+                .showConfirmAlert("Eliminar clientes", "¿Desea eliminar los clientes seleccionados?"
                 + "\nLos clientes recien agregados no se podrán recuperar.");
         
         btn.ifPresent(p -> {

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<DialogPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            prefWidth="500">
+
+    <headerText>
+        Crear Categoría
+    </headerText>
+
+    <content>
+        <VBox spacing="20">
+            <padding>
+                <Insets top="10" right="10" bottom="10" left="10"/>
+            </padding>
+
+            <Label text="Complete el siguiente campo para crear una nueva categoría" 
+                   wrapText="true"/>
+
+            <GridPane hgap="30" vgap="15">
+                <columnConstraints>
+                    <ColumnConstraints percentWidth="100" hgrow="ALWAYS"/>
+                </columnConstraints>
+
+                <VBox spacing="5" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                    <Label text="* Nombre"/>
+                    <TextField fx:id="nameField"/>                    
+                    <Label fx:id="errorName"></Label>
+                </VBox>
+
+                </GridPane>
+        </VBox>
+    </content>
+
+    <buttonTypes>
+        <ButtonType fx:constant="OK"/>
+        <ButtonType fx:constant="CANCEL"/>
+    </buttonTypes>
+
+</DialogPane>

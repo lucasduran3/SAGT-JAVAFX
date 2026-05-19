@@ -40,6 +40,7 @@ public class MainController {
         routes.put("clientes", "/com/mvcjava/sagt/javafx/view/clientsView.fxml");
         routes.put("ventas", "/com/mvcjava/sagt/javafx/view/salesView.fxml");
         routes.put("proveedores", "/com/mvcjava/sagt/javafx/view/suppliersView.fxml");
+        routes.put("categorias", "/com/mvcjava/sagt/javafx/view/categoriesView.fxml");
     }
     
     private void setupSideMenuListener() {

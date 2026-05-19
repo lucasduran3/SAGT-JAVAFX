@@ -15,7 +15,7 @@ import javafx.concurrent.Task;
  *
  * @author lucas
  */
-public class CategorySaveService extends Service<Void>{
+public class CategorySaveService extends Service<Void> {
     private final CategoryService categoryService;
     
     private Set<Category> newCategories;
